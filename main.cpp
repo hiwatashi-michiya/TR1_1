@@ -1,4 +1,6 @@
 #include <Novice.h>
+#include "Map.h"
+#include "Key.h"
 
 const char kWindowTitle[] = "2Dマップチップ";
 
@@ -12,6 +14,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256] = {0};
 	char preKeys[256] = {0};
 
+	Map* map = new Map();
+
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
 		// フレームの開始
@@ -20,10 +24,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// キー入力を受け取る
 		memcpy(preKeys, keys, 256);
 		Novice::GetHitKeyStateAll(keys);
+		Key::Update();
 
 		///
 		/// ↓更新処理ここから
 		///
+
+		map->Update();
 
 		///
 		/// ↑更新処理ここまで
@@ -32,6 +39,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓描画処理ここから
 		///
+
+		map->Draw();
 
 		///
 		/// ↑描画処理ここまで
@@ -45,6 +54,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		}
 	}
+
+	delete map;
 
 	// ライブラリの終了
 	Novice::Finalize();
