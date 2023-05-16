@@ -77,7 +77,9 @@ void Map::Draw() {
 
 		Novice::DrawQuad(0, 0, 1280, 0, 0, 800, 1280, 800, 0, 0, 1280, 800, frameTexture, 0xFFFFFF66);
 
-		Novice::ScreenPrintf(0, 0, "now size %d", undoArrayList.size());
+		Novice::ScreenPrintf(0, 0, "undoArrayList size : %d", undoArrayList.size());
+		Novice::ScreenPrintf(0, 20, "redoArrayList size : %d", redoArrayList.size());
+		Novice::ScreenPrintf(0, 40, "blockNumber : %d", blockNum);
 
 	}
 
@@ -130,6 +132,11 @@ void Map::Edit() {
 
 				//書き換える前と後の要素が同じ場合スルー
 				if (map[mouseYGrid][mouseXGrid] != blockNum) {
+
+					//redoのリストに要素があった場合、空にする
+					if (redoArrayList.empty() != true) {
+						redoArrayList.clear();
+					}
 
 					//リストの最後尾に変更前の要素を追加
 					//マップのナンバーを最初に格納
@@ -279,16 +286,15 @@ void Map::Redo() {
 
 		//保管用のリストから要素を取り出して元のリストに戻し削除
 		tmpArrayType = redoArrayList.back();
-		undoArrayList.push_back(redoArrayList.back());
 		redoArrayList.pop_back();
-
 		tmpArrayY = redoArrayList.back();
-		undoArrayList.push_back(redoArrayList.back());
+		redoArrayList.pop_back();
+		tmpArrayX = redoArrayList.back();
 		redoArrayList.pop_back();
 
-		tmpArrayX = redoArrayList.back();
 		undoArrayList.push_back(map[tmpArrayY][tmpArrayX]);
-		redoArrayList.pop_back();
+		undoArrayList.push_back(tmpArrayY);
+		undoArrayList.push_back(tmpArrayX);
 
 		//取り出した要素を使い元のマップに戻す
 		map[tmpArrayY][tmpArrayX] = tmpArrayType;
