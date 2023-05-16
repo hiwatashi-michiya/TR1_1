@@ -250,7 +250,7 @@ void Map::Undo() {
 	//リストが空でないときに処理
 	if (undoArrayList.empty() != true) {
 
-		//要素を一つずつ取り出して保管用のリストに移動し削除
+		//要素を一つずつ取り出して削除、現在のマップを保管用リストに追加
 		tmpArrayX = undoArrayList.back();
 		redoArrayList.push_back(undoArrayList.back());
 		undoArrayList.pop_back();
@@ -259,8 +259,9 @@ void Map::Undo() {
 		redoArrayList.push_back(undoArrayList.back());
 		undoArrayList.pop_back();
 
+		//直前に変更した場所の要素を保管し、前の要素に入れ替える
 		tmpArrayType = undoArrayList.back();
-		redoArrayList.push_back(undoArrayList.back());
+		redoArrayList.push_back(map[tmpArrayY][tmpArrayX]);
 		undoArrayList.pop_back();
 
 		//取り出した要素を使い書き換える前のマップに戻す
@@ -286,7 +287,7 @@ void Map::Redo() {
 		redoArrayList.pop_back();
 
 		tmpArrayX = redoArrayList.back();
-		undoArrayList.push_back(redoArrayList.back());
+		undoArrayList.push_back(map[tmpArrayY][tmpArrayX]);
 		redoArrayList.pop_back();
 
 		//取り出した要素を使い元のマップに戻す
