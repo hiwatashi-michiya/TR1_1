@@ -82,6 +82,22 @@ private:
 	//マップ書き換え可能かどうか
 	bool isEdit;
 
+	//範囲塗りつぶしを行うかどうか
+	bool isRangeFill;
+
+	//範囲塗りつぶし始点座標X
+	int startRangeFillX;
+	//範囲塗りつぶし終点座標X
+	int endRangeFillX;
+	//範囲塗りつぶし始点座標Y
+	int startRangeFillY;
+	//範囲塗りつぶし終点座標Y
+	int endRangeFillY;
+
+	//範囲選択時の開始座標表示用変数
+	int drawX;
+	int drawY;
+
 	//画面外の表示を制限
 	int borderRight;
 	int borderLeft;
@@ -94,6 +110,10 @@ private:
 
 	//色
 	int color;
+
+	//値を範囲内に収める関数
+	int Clamp(int x, int min, int max);
+
 
 };
 

@@ -22,6 +22,15 @@ Map::Map()
 	blockNum = 0;
 
 	isEdit = false;
+	isRangeFill = false;
+
+	startRangeFillX = 0;
+	endRangeFillX = 0;
+	startRangeFillY = 0;
+	endRangeFillY = 0;
+
+	drawX = 0;
+	drawY = 0;
 
 	borderRight = 1280 + kMapChipSize;
 	borderLeft = -kMapChipSize;
@@ -81,6 +90,10 @@ void Map::Draw() {
 		Novice::ScreenPrintf(0, 20, "redoArrayList size : %d", redoArrayList.size());
 		Novice::ScreenPrintf(0, 40, "blockNumber : %d", blockNum);
 
+		if (Novice::IsPressMouse(1)) {
+			Novice::DrawBox(drawX, drawY, mouseX - drawX, mouseY - drawY, 0.0f, 0x000000FF, kFillModeWireFrame);
+		}
+
 	}
 
 }
@@ -118,13 +131,18 @@ void Map::Edit() {
 
 		}
 
-		if (Novice::IsPressMouse(0)) {
+		//単選択
+		if (Novice::IsPressMouse(0) && !Novice::IsPressMouse(1)) {
 
 			//マウスを押している間書き換える要素をリストに追加
 			Novice::GetMousePosition(&mouseX, &mouseY);
 
 			mouseXGrid = (mouseX) / kMapChipSize;
 			mouseYGrid = (mouseY) / kMapChipSize;
+
+			//配列外参照を起こさない
+			mouseXGrid = Clamp(mouseXGrid, 0, kMaxWidth);
+			mouseYGrid = Clamp(mouseYGrid, 0, kMaxHeight);
 
 			//画面外だったら書き換えない
 			if (mouseX < 1280 && mouseX > 0 &&
@@ -162,6 +180,102 @@ void Map::Edit() {
 
 		}
 		
+		//範囲塗りつぶし、範囲選択
+		if (Novice::IsPressMouse(1) && !isRangeFill) {
+
+			//塗りつぶし開始座標を決める
+			startRangeFillX = (mouseX) / kMapChipSize;
+			startRangeFillY = (mouseY) / kMapChipSize;
+
+			//四角形表示座標を決める
+			drawX = mouseX;
+			drawY = mouseY;
+
+			//フラグを立たせる
+			isRangeFill = true;
+
+		}
+		
+		//範囲塗りつぶしフラグが立った状態でボタンを離したら塗りつぶす
+		if (isRangeFill && !Novice::IsPressMouse(1)) {
+
+			//塗りつぶし終了座標を決める
+			endRangeFillX = (mouseX) / kMapChipSize;
+			endRangeFillY = (mouseY) / kMapChipSize;
+
+			//塗りつぶし範囲の左右、上下
+			int left = 0;
+			int right = 0;
+			int top = 0;
+			int bottom = 0;
+
+			//開始座標と終了座標のどっちが左かを確認する
+			if (startRangeFillX <= endRangeFillX) {
+				left = startRangeFillX;
+				right = endRangeFillX;
+			}
+			else {
+				left = endRangeFillX;
+				right = startRangeFillX;
+			}
+
+			//開始座標と終了座標のどっちが上かを確認する
+			if (startRangeFillY <= endRangeFillY) {
+				top = startRangeFillY;
+				bottom = endRangeFillY;
+			}
+			else {
+				top = endRangeFillY;
+				bottom = startRangeFillY;
+			}
+
+			//配列外参照にならないよう値を収める
+			left = Clamp(left, 0, kMaxWidth - 1);
+			right = Clamp(right, 0, kMaxWidth - 1);
+			top = Clamp(top, 0, kMaxHeight - 1);
+			bottom = Clamp(bottom, 0, kMaxHeight - 1);
+
+			//範囲内塗りつぶしを開始する
+			for (int y = top; y < bottom + 1; y++) {
+				for (int x = left; x < right + 1; x++) {
+
+					//書き換える前と後の要素が同じ場合スルー
+					if (map[y][x] != blockNum) {
+
+						//redoのリストに要素があった場合、空にする
+						if (redoArrayList.empty() != true) {
+							redoArrayList.clear();
+						}
+
+						////リストの最後尾に変更前の要素を追加
+						////マップのナンバーを最初に格納
+						//undoArrayList.push_back(map[y][x]);
+						////行の数字を追加
+						//undoArrayList.push_back(y);
+						////列の数字を追加
+						//undoArrayList.push_back(x);
+
+						////サイズが一定値を超えたら古い順に削除
+						//if (undoArrayList.size() > 900) {
+						//	for (int i = 0; i < 3; i++) {
+						//		undoArrayList.pop_front();
+						//	}
+						//}
+
+						//配列の要素を変更
+						map[y][x] = blockNum;
+
+					}
+
+				}
+			}
+
+
+			//フラグを下げる
+			isRangeFill = false;
+
+		}
+
 		if (Key::IsPress(DIK_LCONTROL)) {
 
 			//ctrl + Zで手戻り、ctrl + Yで元に戻す、ctrl + Sでセーブ
@@ -300,5 +414,19 @@ void Map::Redo() {
 		map[tmpArrayY][tmpArrayX] = tmpArrayType;
 
 	}
+
+}
+
+int Map::Clamp(int x, int min, int max) {
+
+	if (x < min) {
+		x = min;
+	}
+
+	if (x > max) {
+		x = max;
+	}
+
+	return x;
 
 }
