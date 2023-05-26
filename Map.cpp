@@ -32,6 +32,8 @@ Map::Map()
 	drawX = 0;
 	drawY = 0;
 
+	keyCount = kMaxKeyCount;
+
 	borderRight = 1280 + kMapChipSize;
 	borderLeft = -kMapChipSize;
 	borderTop = -kMapChipSize;
@@ -210,29 +212,53 @@ void Map::Edit() {
 
 		if (Key::IsPress(DIK_LCONTROL)) {
 
-			//ctrl + Zで手戻り、ctrl + Yで元に戻す、ctrl + Sでセーブ
-			if (Key::IsTrigger(DIK_Z)) {
+			//ctrl + Zで手戻り、ctrl + Yで元に戻す
+			if (Key::IsPress(DIK_Z)) {
 
-				Undo();
+				//操作性向上の為に入力を管理
+				if (keyCount == kMaxKeyCount || (keyCount < 3 && keyCount % 3 == 0)) {
+					Undo();
+				}
+
+				if (keyCount == 0) {
+					keyCount = 3;
+				}
+
+				keyCount--;
 
 			}
-			else if (Key::IsTrigger(DIK_Y)) {
+			else if (Key::IsPress(DIK_Y)) {
 
-				Redo();
+				//操作性向上の為に入力を管理
+				if (keyCount == kMaxKeyCount || (keyCount < 3 && keyCount % 3 == 0)) {
+					Redo();
+				}
+
+				if (keyCount == 0) {
+					keyCount = 3;
+				}
+
+				keyCount--;
 
 			}
-			else if (Key::IsTrigger(DIK_S)) {
-
+			
+			//ctrl + S でセーブ
+			if (Key::IsTrigger(DIK_S)) {
 				Save();
-
 			}
 
+		}
+
+		//Z、Yどっちも押さずキーカウントが最大値でなければキーカウントリセット
+		if (keyCount != kMaxKeyCount && !Key::IsPress(DIK_Z) && !Key::IsPress(DIK_Y)) {
+			keyCount = kMaxKeyCount;
 		}
 
 	}
 
 }
 
+//マップチップのステータス設定
 void Map::SetState(int mapNum) {
 
 	switch (mapNum)
@@ -257,6 +283,7 @@ void Map::SetState(int mapNum) {
 
 }
 
+//マップの読み込み
 void Map::Load() {
 
 	FILE* fp = NULL;

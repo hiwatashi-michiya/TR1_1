@@ -129,6 +129,10 @@ private:
 	//色
 	int color;
 
+	//キー入力を管理するためのカウント
+	int keyCount;
+	const int kMaxKeyCount = 15;
+
 	//値を範囲内に収める関数
 	int Clamp(int x, int min, int max);
 
