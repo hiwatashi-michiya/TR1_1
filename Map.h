@@ -136,6 +136,11 @@ private:
 	//値を範囲内に収める関数
 	int Clamp(int x, int min, int max);
 
+	//ImGuiの位置、サイズを格納する変数
+	float ImGuiPosX;
+	float ImGuiPosY;
+	float ImGuiWidth;
+	float ImGuiHeight;
 
 };
 

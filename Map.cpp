@@ -32,6 +32,11 @@ Map::Map()
 	drawX = 0;
 	drawY = 0;
 
+	ImGuiPosX = 0;
+	ImGuiPosY = 0;
+	ImGuiWidth = 0;
+	ImGuiHeight = 0;
+
 	keyCount = kMaxKeyCount;
 
 	borderRight = 1280 + kMapChipSize;
@@ -51,6 +56,14 @@ Map::~Map()
 }
 
 void Map::Update() {
+
+	ImGui::Begin("Editor");
+	ImGuiPosX = ImGui::GetWindowPos().x;
+	ImGuiPosY = ImGui::GetWindowPos().y;
+	ImGuiWidth = ImGui::GetWindowSize().x;
+	ImGuiHeight = ImGui::GetWindowSize().y;
+	ImGui::DragInt("blockNum", &blockNum, 0.05f, 0, kMaxBlockType - 1);
+	ImGui::End();
 
 	Novice::GetMousePosition(&mouseX, &mouseY);
 
@@ -84,6 +97,12 @@ void Map::Draw() {
 		}
 	}
 
+
+	Novice::ScreenPrintf(0, 20, "posX : %1.3f", ImGuiPosX);
+	Novice::ScreenPrintf(0, 40, "posY : %1.3f", ImGuiPosY);
+	Novice::ScreenPrintf(0, 60, "width : %1.3f", ImGuiWidth);
+	Novice::ScreenPrintf(0, 80, "height : %1.3f", ImGuiHeight);
+
 	if (isEdit) {
 
 		Novice::DrawQuad(0, 0, 1280, 0, 0, 800, 1280, 800, 0, 0, 1280, 800, frameTexture, 0xFFFFFF66);
@@ -92,7 +111,7 @@ void Map::Draw() {
 		Novice::ScreenPrintf(0, 20, "redoArrayList size : %d", redoArrayList.size());
 		Novice::ScreenPrintf(0, 40, "blockNumber : %d", blockNum);
 
-		if (Novice::IsPressMouse(1)) {
+		if (Novice::IsPressMouse(1) && isRangeFill) {
 			Novice::DrawBox(drawX, drawY, mouseX - drawX, mouseY - drawY, 0.0f, 0x000000FF, kFillModeWireFrame);
 		}
 
@@ -133,75 +152,83 @@ void Map::Edit() {
 
 		}
 
-		//単選択
-		if (Novice::IsPressMouse(0) && !Novice::IsPressMouse(1)) {
+		//ImGuiウィンドウの範囲内を反応させない
+		if (!(ImGuiPosX <= mouseX && mouseX <= ImGuiPosX + ImGuiWidth &&
+			ImGuiPosY <= mouseY && mouseY <= ImGuiPosY + ImGuiHeight)) {
 
-			//マウスを押している間書き換える要素をリストに追加
-			Novice::GetMousePosition(&mouseX, &mouseY);
+			//単選択
+			if (Novice::IsPressMouse(0) && !Novice::IsPressMouse(1)) {
 
-			mouseXGrid = (mouseX) / kMapChipSize;
-			mouseYGrid = (mouseY) / kMapChipSize;
+				//マウスを押している間書き換える要素をリストに追加
+				Novice::GetMousePosition(&mouseX, &mouseY);
 
-			//配列外参照を起こさない
-			mouseXGrid = Clamp(mouseXGrid, 0, kMaxWidth);
-			mouseYGrid = Clamp(mouseYGrid, 0, kMaxHeight);
+				mouseXGrid = (mouseX) / kMapChipSize;
+				mouseYGrid = (mouseY) / kMapChipSize;
 
-			//画面外だったら書き換えない
-			if (mouseX < 1280 && mouseX > 0 &&
-				mouseY < 720 && mouseY > 0) {
+				//配列外参照を起こさない
+				mouseXGrid = Clamp(mouseXGrid, 0, kMaxWidth);
+				mouseYGrid = Clamp(mouseYGrid, 0, kMaxHeight);
 
-				//書き換える前と後の要素が同じ場合スルー
-				if (map[mouseYGrid][mouseXGrid] != blockNum) {
+				//画面外だったら書き換えない
+				if (mouseX < 1280 && mouseX > 0 &&
+					mouseY < 720 && mouseY > 0) {
 
-					//redoのリストに要素があった場合、空にする
-					if (redoArrayList.empty() != true) {
-						redoArrayList.clear();
-					}
+					//書き換える前と後の要素が同じ場合スルー
+					if (map[mouseYGrid][mouseXGrid] != blockNum) {
 
-					//redoのリスト(範囲塗りつぶし)に要素があった場合、空にする
-					if (redoFillArrayList.empty() != true) {
-						redoFillArrayList.clear();
-					}
-
-					//リストの最後尾に変更前の要素を追加
-					//マップのナンバーを最初に格納
-					undoArrayList.push_back(map[mouseYGrid][mouseXGrid]);
-					//行の数字を追加
-					undoArrayList.push_back(mouseYGrid);
-					//列の数字を追加
-					undoArrayList.push_back(mouseXGrid);
-
-					//サイズが一定値を超えたら古い順に削除
-					if (undoArrayList.size() > kMaxListSize) {
-						for (int i = 0; i < 3; i++) {
-							undoArrayList.pop_front();
+						//redoのリストに要素があった場合、空にする
+						if (redoArrayList.empty() != true) {
+							redoArrayList.clear();
 						}
-					}
 
-					//配列の要素を変更
-					map[mouseYGrid][mouseXGrid] = blockNum;
+						//redoのリスト(範囲塗りつぶし)に要素があった場合、空にする
+						if (redoFillArrayList.empty() != true) {
+							redoFillArrayList.clear();
+						}
+
+						//リストの最後尾に変更前の要素を追加
+						//マップのナンバーを最初に格納
+						undoArrayList.push_back(map[mouseYGrid][mouseXGrid]);
+						//行の数字を追加
+						undoArrayList.push_back(mouseYGrid);
+						//列の数字を追加
+						undoArrayList.push_back(mouseXGrid);
+
+						//サイズが一定値を超えたら古い順に削除
+						if (undoArrayList.size() > kMaxListSize) {
+							for (int i = 0; i < 3; i++) {
+								undoArrayList.pop_front();
+							}
+						}
+
+						//配列の要素を変更
+						map[mouseYGrid][mouseXGrid] = blockNum;
+
+					}
 
 				}
 
 			}
 
+			//範囲塗りつぶし、範囲選択
+			if (Novice::IsPressMouse(1) && !isRangeFill) {
+
+				//塗りつぶし開始座標を決める
+				startRangeFillX = (mouseX) / kMapChipSize;
+				startRangeFillY = (mouseY) / kMapChipSize;
+
+				//四角形表示座標を決める
+				drawX = mouseX;
+				drawY = mouseY;
+
+				//フラグを立たせる
+				isRangeFill = true;
+
+			}
+
 		}
+
 		
-		//範囲塗りつぶし、範囲選択
-		if (Novice::IsPressMouse(1) && !isRangeFill) {
-
-			//塗りつぶし開始座標を決める
-			startRangeFillX = (mouseX) / kMapChipSize;
-			startRangeFillY = (mouseY) / kMapChipSize;
-
-			//四角形表示座標を決める
-			drawX = mouseX;
-			drawY = mouseY;
-
-			//フラグを立たせる
-			isRangeFill = true;
-
-		}
 
 		//範囲塗りつぶし
 		if (isRangeFill && !Novice::IsPressMouse(1)) {
