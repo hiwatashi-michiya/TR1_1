@@ -12,6 +12,12 @@ const int kMaxBlockType = 5;
 //マップチップのサイズ
 const int kMapChipSize = 32;
 
+//リストの最大サイズ(Undo, Redo)
+const int kMaxListSize = 900;
+
+//範囲塗りつぶしリストの最大サイズ
+const int kMaxFillListSIze = kMaxWidth * kMaxHeight * kMaxListSize;
+
 enum BlockType {
 	NONE,
 	BLOCK,
@@ -50,6 +56,9 @@ private:
 	//Redo
 	void Redo();
 
+	//範囲塗りつぶし
+	void RangeFill();
+
 	//csv書き換えに使う文字列
 	char string[kMaxBlockType][2] = { "0", "1", "2", "3", "4" };
 
@@ -58,6 +67,15 @@ private:
 
 	//手戻りしたときの要素保管場所
 	std::list<int> redoArrayList;
+
+	//範囲選択時の同時塗りつぶし(undo)
+	std::list<int> undoFillArrayList;
+
+	//範囲選択時の同時塗りつぶし(redo)
+	std::list<int> redoFillArrayList;
+
+	//コピーリスト
+	std::list<int> copyArrayList;
 
 	//リストの要素を参照する変数
 	int tmpArrayX;

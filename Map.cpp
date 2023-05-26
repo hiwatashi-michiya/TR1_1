@@ -156,6 +156,11 @@ void Map::Edit() {
 						redoArrayList.clear();
 					}
 
+					//redoのリスト(範囲塗りつぶし)に要素があった場合、空にする
+					if (redoFillArrayList.empty() != true) {
+						redoFillArrayList.clear();
+					}
+
 					//リストの最後尾に変更前の要素を追加
 					//マップのナンバーを最初に格納
 					undoArrayList.push_back(map[mouseYGrid][mouseXGrid]);
@@ -165,7 +170,7 @@ void Map::Edit() {
 					undoArrayList.push_back(mouseXGrid);
 
 					//サイズが一定値を超えたら古い順に削除
-					if (undoArrayList.size() > 900) {
+					if (undoArrayList.size() > kMaxListSize) {
 						for (int i = 0; i < 3; i++) {
 							undoArrayList.pop_front();
 						}
@@ -195,85 +200,12 @@ void Map::Edit() {
 			isRangeFill = true;
 
 		}
-		
-		//範囲塗りつぶしフラグが立った状態でボタンを離したら塗りつぶす
+
+		//範囲塗りつぶし
 		if (isRangeFill && !Novice::IsPressMouse(1)) {
 
-			//塗りつぶし終了座標を決める
-			endRangeFillX = (mouseX) / kMapChipSize;
-			endRangeFillY = (mouseY) / kMapChipSize;
-
-			//塗りつぶし範囲の左右、上下
-			int left = 0;
-			int right = 0;
-			int top = 0;
-			int bottom = 0;
-
-			//開始座標と終了座標のどっちが左かを確認する
-			if (startRangeFillX <= endRangeFillX) {
-				left = startRangeFillX;
-				right = endRangeFillX;
-			}
-			else {
-				left = endRangeFillX;
-				right = startRangeFillX;
-			}
-
-			//開始座標と終了座標のどっちが上かを確認する
-			if (startRangeFillY <= endRangeFillY) {
-				top = startRangeFillY;
-				bottom = endRangeFillY;
-			}
-			else {
-				top = endRangeFillY;
-				bottom = startRangeFillY;
-			}
-
-			//配列外参照にならないよう値を収める
-			left = Clamp(left, 0, kMaxWidth - 1);
-			right = Clamp(right, 0, kMaxWidth - 1);
-			top = Clamp(top, 0, kMaxHeight - 1);
-			bottom = Clamp(bottom, 0, kMaxHeight - 1);
-
-			//範囲内塗りつぶしを開始する
-			for (int y = top; y < bottom + 1; y++) {
-				for (int x = left; x < right + 1; x++) {
-
-					//書き換える前と後の要素が同じ場合スルー
-					if (map[y][x] != blockNum) {
-
-						//redoのリストに要素があった場合、空にする
-						if (redoArrayList.empty() != true) {
-							redoArrayList.clear();
-						}
-
-						////リストの最後尾に変更前の要素を追加
-						////マップのナンバーを最初に格納
-						//undoArrayList.push_back(map[y][x]);
-						////行の数字を追加
-						//undoArrayList.push_back(y);
-						////列の数字を追加
-						//undoArrayList.push_back(x);
-
-						////サイズが一定値を超えたら古い順に削除
-						//if (undoArrayList.size() > 900) {
-						//	for (int i = 0; i < 3; i++) {
-						//		undoArrayList.pop_front();
-						//	}
-						//}
-
-						//配列の要素を変更
-						map[y][x] = blockNum;
-
-					}
-
-				}
-			}
-
-
-			//フラグを下げる
-			isRangeFill = false;
-
+			RangeFill();
+			
 		}
 
 		if (Key::IsPress(DIK_LCONTROL)) {
@@ -343,6 +275,92 @@ void Map::Load() {
 
 }
 
+//範囲塗りつぶし
+void Map::RangeFill() {
+
+	//塗りつぶし終了座標を決める
+	endRangeFillX = (mouseX) / kMapChipSize;
+	endRangeFillY = (mouseY) / kMapChipSize;
+
+	//塗りつぶし範囲の左右、上下
+	int left = 0;
+	int right = 0;
+	int top = 0;
+	int bottom = 0;
+
+	//開始座標と終了座標のどっちが左かを確認する
+	if (startRangeFillX <= endRangeFillX) {
+		left = startRangeFillX;
+		right = endRangeFillX;
+	}
+	else {
+		left = endRangeFillX;
+		right = startRangeFillX;
+	}
+
+	//開始座標と終了座標のどっちが上かを確認する
+	if (startRangeFillY <= endRangeFillY) {
+		top = startRangeFillY;
+		bottom = endRangeFillY;
+	}
+	else {
+		top = endRangeFillY;
+		bottom = startRangeFillY;
+	}
+
+	//配列外参照にならないよう値を収める
+	left = Clamp(left, 0, kMaxWidth - 1);
+	right = Clamp(right, 0, kMaxWidth - 1);
+	top = Clamp(top, 0, kMaxHeight - 1);
+	bottom = Clamp(bottom, 0, kMaxHeight - 1);
+
+	//範囲内塗りつぶしを開始する
+	for (int y = top; y < bottom + 1; y++) {
+		for (int x = left; x < right + 1; x++) {
+
+			//redoのリストに要素があった場合、空にする
+			if (redoArrayList.empty() != true) {
+				redoArrayList.clear();
+			}
+
+			//redoのリスト(範囲塗りつぶし)に要素があった場合、空にする
+			if (redoFillArrayList.empty() != true) {
+				redoFillArrayList.clear();
+			}
+
+			//リストの最後尾に変更前の要素を追加
+			//マップのナンバーを格納
+			undoFillArrayList.push_back(map[y][x]);
+
+			//サイズが一定値を超えたら古い順に削除
+			if (undoFillArrayList.size() > kMaxFillListSIze) {
+				for (int i = 0; i < 3; i++) {
+					undoFillArrayList.pop_front();
+				}
+			}
+
+			//配列の要素を変更
+			map[y][x] = blockNum;
+
+		}
+	}
+
+	//範囲を格納
+	undoFillArrayList.push_back(left);
+	undoFillArrayList.push_back(right);
+	undoFillArrayList.push_back(top);
+	undoFillArrayList.push_back(bottom);
+
+	//範囲塗りつぶし用の値をundoリストに格納。値がずれないように三回行う
+	for (int i = 0; i < 3; i++) {
+		undoArrayList.push_back(-1);
+	}
+
+	//フラグを下げる
+	isRangeFill = false;
+
+}
+
 //セーブ機能
 void Map::Save() {
 
@@ -371,22 +389,69 @@ void Map::Undo() {
 	//リストが空でないときに処理
 	if (undoArrayList.empty() != true) {
 
-		//要素を一つずつ取り出して削除、現在のマップを保管用リストに追加
-		tmpArrayX = undoArrayList.back();
-		redoArrayList.push_back(undoArrayList.back());
-		undoArrayList.pop_back();
+		//範囲塗りつぶしをしていたかどうか
+		if (undoArrayList.back() != -1) {
 
-		tmpArrayY = undoArrayList.back();
-		redoArrayList.push_back(undoArrayList.back());
-		undoArrayList.pop_back();
+			//要素を一つずつ取り出して削除、現在のマップを保管用リストに追加
+			tmpArrayX = undoArrayList.back();
+			undoArrayList.pop_back();
+			tmpArrayY = undoArrayList.back();
+			undoArrayList.pop_back();
+			tmpArrayType = undoArrayList.back();
+			undoArrayList.pop_back();
 
-		//直前に変更した場所の要素を保管し、前の要素に入れ替える
-		tmpArrayType = undoArrayList.back();
-		redoArrayList.push_back(map[tmpArrayY][tmpArrayX]);
-		undoArrayList.pop_back();
+			redoArrayList.push_back(tmpArrayX);
+			redoArrayList.push_back(tmpArrayY);
+			redoArrayList.push_back(map[tmpArrayY][tmpArrayX]);
 
-		//取り出した要素を使い書き換える前のマップに戻す
-		map[tmpArrayY][tmpArrayX] = tmpArrayType;
+			//取り出した要素を使い書き換える前のマップに戻す
+			map[tmpArrayY][tmpArrayX] = tmpArrayType;
+
+		}
+		//範囲塗りつぶしの場合の処理
+		else {
+
+			//undoリストから値を削除
+			for (int i = 0; i < 3; i++) {
+				undoArrayList.pop_back();
+			}
+
+			//範囲の要素を取り出し代入
+			int bottom = undoFillArrayList.back();
+			undoFillArrayList.pop_back();
+			int top = undoFillArrayList.back();
+			undoFillArrayList.pop_back();
+			int right = undoFillArrayList.back();
+			undoFillArrayList.pop_back();
+			int left = undoFillArrayList.back();
+			undoFillArrayList.pop_back();
+
+			//塗った時と逆の手順で塗りつぶしを行う
+			for (int y = bottom; y >= top; y--) {
+				for (int x = right; x >= left; x--) {
+					//タイプを格納
+					redoFillArrayList.push_back(map[y][x]);
+					//要素を代入
+					map[y][x] = undoFillArrayList.back();
+					//undo塗りつぶしリストの要素を削除
+					undoFillArrayList.pop_back();
+				}
+			}
+
+			//範囲を格納
+			redoFillArrayList.push_back(left);
+			redoFillArrayList.push_back(right);
+			redoFillArrayList.push_back(top);
+			redoFillArrayList.push_back(bottom);
+
+			//範囲塗りつぶし用の値をredoリストに格納。値がずれないように三回行う
+			for (int i = 0; i < 3; i++) {
+				redoArrayList.push_back(-1);
+			}
+
+		}
+
+		
 
 	}
 
@@ -398,20 +463,67 @@ void Map::Redo() {
 	//リストが空でないときに処理
 	if (redoArrayList.empty() != true) {
 
-		//保管用のリストから要素を取り出して元のリストに戻し削除
-		tmpArrayType = redoArrayList.back();
-		redoArrayList.pop_back();
-		tmpArrayY = redoArrayList.back();
-		redoArrayList.pop_back();
-		tmpArrayX = redoArrayList.back();
-		redoArrayList.pop_back();
+		//範囲塗りつぶしをしていたかどうか
+		if (redoArrayList.back() != -1) {
 
-		undoArrayList.push_back(map[tmpArrayY][tmpArrayX]);
-		undoArrayList.push_back(tmpArrayY);
-		undoArrayList.push_back(tmpArrayX);
+			//保管用のリストから要素を取り出して元のリストに戻し削除
+			tmpArrayType = redoArrayList.back();
+			redoArrayList.pop_back();
+			tmpArrayY = redoArrayList.back();
+			redoArrayList.pop_back();
+			tmpArrayX = redoArrayList.back();
+			redoArrayList.pop_back();
 
-		//取り出した要素を使い元のマップに戻す
-		map[tmpArrayY][tmpArrayX] = tmpArrayType;
+			undoArrayList.push_back(map[tmpArrayY][tmpArrayX]);
+			undoArrayList.push_back(tmpArrayY);
+			undoArrayList.push_back(tmpArrayX);
+
+			//取り出した要素を使い元のマップに戻す
+			map[tmpArrayY][tmpArrayX] = tmpArrayType;
+
+		}
+		else {
+
+			//redoリストから値を削除
+			for (int i = 0; i < 3; i++) {
+				redoArrayList.pop_back();
+			}
+
+			//範囲の要素を取り出し代入
+			int bottom = redoFillArrayList.back();
+			redoFillArrayList.pop_back();
+			int top = redoFillArrayList.back();
+			redoFillArrayList.pop_back();
+			int right = redoFillArrayList.back();
+			redoFillArrayList.pop_back();
+			int left = redoFillArrayList.back();
+			redoFillArrayList.pop_back();
+
+			for (int y = top; y < bottom + 1; y++) {
+				for (int x = left; x < right + 1; x++) {
+					//タイプを格納
+					undoFillArrayList.push_back(map[y][x]);
+					//要素を代入
+					map[y][x] = redoFillArrayList.back();
+					//undo塗りつぶしリストの要素を削除
+					redoFillArrayList.pop_back();
+				}
+			}
+
+			//範囲を格納
+			undoFillArrayList.push_back(left);
+			undoFillArrayList.push_back(right);
+			undoFillArrayList.push_back(top);
+			undoFillArrayList.push_back(bottom);
+
+			//範囲塗りつぶし用の値をundoリストに格納。値がずれないように三回行う
+			for (int i = 0; i < 3; i++) {
+				undoArrayList.push_back(-1);
+			}
+
+		}
+
+		
 
 	}
 
