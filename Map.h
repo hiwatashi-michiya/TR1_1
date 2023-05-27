@@ -20,10 +20,10 @@ const int kMaxFillListSIze = kMaxWidth * kMaxHeight * kMaxListSize;
 
 enum BlockType {
 	NONE,
+	GROUND,
 	BLOCK,
-	FIRE,
-	WATER,
-	WOOD
+	WONDERBLOCK,
+	FIXEDBLOCK
 };
 
 //マップの操作を行うクラス
@@ -141,6 +141,17 @@ private:
 	float ImGuiPosY;
 	float ImGuiWidth;
 	float ImGuiHeight;
+
+	//現在選択しているマップの場所を表示するための座標
+	int selectX;
+	int selectY;
+
+	//その他画像
+	int bgTexture;
+	int groundTexture;
+	int blockTexture;
+	int wonderBlockTexture;
+	int fixedBlockTexture;
 
 };
 

@@ -37,6 +37,9 @@ Map::Map()
 	ImGuiWidth = 0;
 	ImGuiHeight = 0;
 
+	selectX = 0;
+	selectY = 0;
+
 	keyCount = kMaxKeyCount;
 
 	borderRight = 1280 + kMapChipSize;
@@ -44,8 +47,13 @@ Map::Map()
 	borderTop = -kMapChipSize;
 	borderDown = 720 + kMapChipSize;
 
-	textureHandle = Novice::LoadTexture("./Resources/Texture/map.png");
+	textureHandle = Novice::LoadTexture("./Resources/Texture/block.png");
 	frameTexture = Novice::LoadTexture("./Resources/Texture/frameborder.png");
+	bgTexture = Novice::LoadTexture("./Resources/Texture/background.png");
+	groundTexture = Novice::LoadTexture("./Resources/Texture/ground.png");
+	blockTexture = Novice::LoadTexture("./Resources/Texture/block.png");
+	wonderBlockTexture = Novice::LoadTexture("./Resources/Texture/wonderblock.png");
+	fixedBlockTexture = Novice::LoadTexture("./Resources/Texture/fixedblock.png");
 
 	color = 0xFFFFFFFF;
 
@@ -76,6 +84,8 @@ void Map::Update() {
 
 void Map::Draw() {
 
+	Novice::DrawQuad(0, 0, 1280, 0, 0, 720, 1280, 720, 0, 0, 1280, 720, bgTexture, 0xFFFFFFFF);
+
 	for (int y = 0; y < kMaxHeight; y++) {
 		for (int x = 0; x < kMaxWidth; x++) {
 
@@ -87,11 +97,14 @@ void Map::Draw() {
 				y * kMapChipSize > borderTop &&
 				y * kMapChipSize < borderDown) {
 				
-				Novice::DrawQuad(x * kMapChipSize, y * kMapChipSize, 
-					x * kMapChipSize + kMapChipSize, y * kMapChipSize,
-					x * kMapChipSize, y * kMapChipSize + kMapChipSize,
-					x * kMapChipSize + kMapChipSize, y * kMapChipSize + kMapChipSize,
-					0, 0, 32, 32, textureHandle, color);
+				//ブロックがあったら表示
+				if (map[y][x] != NONE) {
+					Novice::DrawQuad(x * kMapChipSize, y * kMapChipSize,
+						x * kMapChipSize + kMapChipSize, y * kMapChipSize,
+						x * kMapChipSize, y * kMapChipSize + kMapChipSize,
+						x * kMapChipSize + kMapChipSize, y * kMapChipSize + kMapChipSize,
+						0, 0, 32, 32, textureHandle, color);
+				}
 
 			}
 		}
@@ -110,6 +123,8 @@ void Map::Draw() {
 		Novice::ScreenPrintf(0, 0, "undoArrayList size : %d", undoArrayList.size());
 		Novice::ScreenPrintf(0, 20, "redoArrayList size : %d", redoArrayList.size());
 		Novice::ScreenPrintf(0, 40, "blockNumber : %d", blockNum);
+
+		Novice::DrawBox(selectX * kMapChipSize, selectY * kMapChipSize, kMapChipSize, kMapChipSize, 0.0f, 0xAA0000FF, kFillModeWireFrame);
 
 		if (Novice::IsPressMouse(1) && isRangeFill) {
 			Novice::DrawBox(drawX, drawY, mouseX - drawX, mouseY - drawY, 0.0f, 0x000000FF, kFillModeWireFrame);
@@ -155,6 +170,12 @@ void Map::Edit() {
 		//ImGuiウィンドウの範囲内を反応させない
 		if (!(ImGuiPosX <= mouseX && mouseX <= ImGuiPosX + ImGuiWidth &&
 			ImGuiPosY <= mouseY && mouseY <= ImGuiPosY + ImGuiHeight)) {
+
+			//ボタンを押したらセレクト位置を決める
+			if (Novice::IsPressMouse(0) || Novice::IsPressMouse(1)) {
+				selectX = (mouseX) / kMapChipSize;
+				selectY = (mouseY) / kMapChipSize;
+			}
 
 			//単選択
 			if (Novice::IsPressMouse(0) && !Novice::IsPressMouse(1)) {
@@ -292,19 +313,23 @@ void Map::SetState(int mapNum) {
 	{
 	case NONE:
 	default:
-		color = 0x00000000;
+		color = 0xFFFFFFFF;
+		break;
+	case GROUND:
+		color = 0xFFFFFFFF;
+		textureHandle = groundTexture;
 		break;
 	case BLOCK:
 		color = 0xFFFFFFFF;
+		textureHandle = blockTexture;
 		break;
-	case FIRE:
-		color = 0xFF0000FF;
+	case WONDERBLOCK:
+		color = 0xFFFFFFFF;
+		textureHandle = wonderBlockTexture;
 		break;
-	case WATER:
-		color = 0x0000FFFF;
-		break;
-	case WOOD:
-		color = 0x00FF00FF;
+	case FIXEDBLOCK:
+		color = 0xFFFFFFFF;
+		textureHandle = fixedBlockTexture;
 		break;
 	}
 
