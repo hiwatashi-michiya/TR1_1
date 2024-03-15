@@ -22,7 +22,7 @@ Map::Map()
 
 	blockNum_ = 0;
 
-	isEdit_ = false;
+	isEdit_ = true;
 	isRangeFill_ = false;
 	isSelect_ = false;
 	isSave_ = true;
@@ -62,6 +62,11 @@ Map::Map()
 
 	color_ = 0xFFFFFFFF;
 
+	undoArrayList_.clear();
+	redoArrayList_.clear();
+	undoFillArrayList_.clear();
+	redoFillArrayList_.clear();
+
 }
 
 Map::~Map()
@@ -71,13 +76,17 @@ Map::~Map()
 void Map::Update() {
 
 	//コントロールを押していない時
-	if (!Key::IsPress(DIK_LCONTROL)) {
+	if (!Key::IsPress(DIK_LCONTROL) && isOpenFile_) {
 
 		if (Key::IsPress(DIK_W)) {
 			
 			if (scrollY_ > 0) {
 
 				scrollY_ -= scrollValue_;
+
+				if (isRangeFill_) {
+					drawHeightScrollY_ -= scrollValue_;
+				}
 
 				if (scrollY_ < 0) {
 					scrollY_ = 0;
@@ -93,6 +102,10 @@ void Map::Update() {
 
 				scrollY_ += scrollValue_;
 
+				if (isRangeFill_) {
+					drawHeightScrollY_ += scrollValue_;
+				}
+
 				if (scrollY_ > kScrollLimitY_) {
 					scrollY_ = kScrollLimitY_;
 				}
@@ -107,6 +120,10 @@ void Map::Update() {
 
 				scrollX_ -= scrollValue_;
 
+				if (isRangeFill_) {
+					drawWidthScrollX_ -= scrollValue_;
+				}
+
 				if (scrollX_ < 0) {
 					scrollX_ = 0;
 				}
@@ -120,6 +137,10 @@ void Map::Update() {
 			if (scrollX_ < kScrollLimitX_) {
 				
 				scrollX_ += scrollValue_;
+
+				if (isRangeFill_) {
+					drawWidthScrollX_ += scrollValue_;
+				}
 
 				if (scrollX_ > kScrollLimitX_) {
 					scrollX_ = kScrollLimitX_;
@@ -147,8 +168,25 @@ void Map::Update() {
 
 		if (isOpenFile_) {
 
-			ImGui::DragInt("blockNum", &blockNum_, 0.05f, 0, kMaxBlockType - 1);
-			ImGui::InputText("tool", &toolString_[tool_][0], ImGuiInputTextFlags_ReadOnly);
+			ImGui::DragInt("blockNum", &blockNum_, 0.05f, 0, BlockType::MAXBLOCK - 1);
+
+			{
+
+				int toolNum = tool_;
+
+				std::vector<const char*> toolStr;
+
+				for (uint32_t i = 0; i < 2; i++) {
+					toolStr.push_back(tools_[i].c_str());
+				}
+
+				ImGui::Combo("Tool", &toolNum, toolStr.data(), int(toolStr.size()));
+
+				tool_ = static_cast<TOOL>(toolNum);
+
+			}
+
+			/*ImGui::InputText("tool", &toolString_[tool_][0], ImGuiInputTextFlags_ReadOnly);*/
 
 			if (ImGui::Button("Save")) {
 				Save();
@@ -198,6 +236,9 @@ void Map::Update() {
 			}
 
 		}
+
+		ImGui::Text("Scroll X : %d", scrollX_);
+		ImGui::Text("Scroll Y : %d", scrollY_);
 
 		ImGui::End();
 
@@ -268,13 +309,15 @@ void Map::Draw() {
 		Novice::ScreenPrintf(0, 20, "redoArrayList size : %d", redoArrayList_.size());
 		Novice::ScreenPrintf(0, 40, "blockNumber : %d", blockNum_);
 
-		Novice::DrawBox(selectX_ * kMapChipSize, selectY_ * kMapChipSize, kMapChipSize, kMapChipSize, 0.0f, 0xAA0000FF, kFillModeWireFrame);
+		Novice::DrawBox(selectX_ * kMapChipSize - scrollX_, selectY_ * kMapChipSize - scrollY_, kMapChipSize, kMapChipSize, 0.0f, 0xAA0000FF, kFillModeWireFrame);
 
 		if (isRangeFill_ && tool_ == RANGEFILL) {
-			Novice::DrawBox(drawX_, drawY_, mouseX_ - drawX_, mouseY_ - drawY_, 0.0f, 0x000000FF, kFillModeWireFrame);
+			Novice::DrawBox(drawX_ - drawWidthScrollX_, drawY_ - drawHeightScrollY_,
+				mouseX_ - (drawX_ - drawWidthScrollX_), mouseY_ - (drawY_ - drawHeightScrollY_), 0.0f, 0x000000FF, kFillModeWireFrame);
 		}
 		else if (isSelect_ && tool_ == SELECT) {
-			Novice::DrawBox(drawX_, drawY_, mouseX_ - drawX_, mouseY_ - drawY_, 0.0f, 0x0000FFFF, kFillModeWireFrame);
+			Novice::DrawBox(drawX_ - drawWidthScrollX_, drawY_ - drawHeightScrollY_,
+				mouseX_ - (drawX_ - drawWidthScrollX_), mouseY_ - (drawY_ - drawHeightScrollY_), 0.0f, 0x0000FFFF, kFillModeWireFrame);
 		}
 
 		if (isSave_) {
@@ -302,7 +345,7 @@ void Map::Edit() {
 
 	}
 
-	if (isEdit_ == true) {
+	if (isEdit_ && isOpenFile_) {
 
 		//コントロールを押していない時
 		if (!Key::IsPress(DIK_LCONTROL)) {
@@ -310,7 +353,7 @@ void Map::Edit() {
 			//ブロック切り替え
 			if (Key::IsTrigger(DIK_E)) {
 
-				if (blockNum_ < kMaxBlockType - 1) {
+				if (blockNum_ < BlockType::MAXBLOCK - 1) {
 					blockNum_++;
 				}
 
@@ -343,8 +386,8 @@ void Map::Edit() {
 
 			//ボタンを押したらセレクト位置を決める
 			if (Novice::IsPressMouse(0) || Novice::IsPressMouse(1)) {
-				selectX_ = (mouseX_) / kMapChipSize;
-				selectY_ = (mouseY_) / kMapChipSize;
+				selectX_ = (mouseX_ + scrollX_) / kMapChipSize;
+				selectY_ = (mouseY_ + scrollY_) / kMapChipSize;
 			}
 
 			//左クリックした場合
@@ -422,6 +465,9 @@ void Map::Edit() {
 						//四角形表示座標を決める
 						drawX_ = mouseX_;
 						drawY_ = mouseY_;
+
+						drawWidthScrollX_ = 0;
+						drawHeightScrollY_ = 0;
 
 						//フラグを立たせる
 						isRangeFill_ = true;
@@ -535,7 +581,8 @@ void Map::SetState(int mapNum) {
 	{
 	case NONE:
 	default:
-		color_ = 0xFFFFFFFF;
+		color_ = 0x000000FF;
+		textureHandle_ = groundTexture_;
 		break;
 	case GROUND:
 		color_ = 0xFFFFFFFF;
@@ -552,6 +599,34 @@ void Map::SetState(int mapNum) {
 	case FIXEDBLOCK:
 		color_ = 0xFFFFFFFF;
 		textureHandle_ = fixedBlockTexture_;
+		break;
+	case BBA:
+		color_ = 0xff0000ff;
+		textureHandle_ = groundTexture_;
+		break;
+	case BBC:
+		color_ = 0xffff00ff;
+		textureHandle_ = groundTexture_;
+		break;
+	case BBD:
+		color_ = 0xff00ffff;
+		textureHandle_ = groundTexture_;
+		break;
+	case BBE:
+		color_ = 0x00ff00ff;
+		textureHandle_ = groundTexture_;
+		break;
+	case BBF:
+		color_ = 0x00ffffff;
+		textureHandle_ = groundTexture_;
+		break;
+	case BBG:
+		color_ = 0x0000ffff;
+		textureHandle_ = groundTexture_;
+		break;
+	case BBH:
+		color_ = 0xaaaaaaff;
+		textureHandle_ = groundTexture_;
 		break;
 	}
 
@@ -583,7 +658,7 @@ void Map::Load() {
 
 	for (int y = 0; y < kMaxHeight; y++) {
 		for (int x = 0; x < kMaxWidth; x++) {
-			fscanf_s(fp, "%d,", &map_[y][x]);
+			fscanf_s(fp, "%x,", &map_[y][x]);
 		}
 	}
 
@@ -746,7 +821,22 @@ void Map::Close() {
 
 	}
 
+	for (uint32_t y = 0; y < kMaxHeight; y++) {
+
+		for (uint32_t x = 0; x < kMaxWidth; x++) {
+			map_[y][x] = 0;
+		}
+
+	}
+
+	undoArrayList_.clear();
+	redoArrayList_.clear();
+	undoFillArrayList_.clear();
+	redoFillArrayList_.clear();
+
 	isOpenFile_ = false;
+
+	isSave_ = true;
 
 }
 

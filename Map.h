@@ -8,9 +8,6 @@ const int kMaxWidth = 200;
 //縦最大幅
 const int kMaxHeight = 100;
 
-//ブロックの種類
-const int kMaxBlockType = 5;
-
 //マップチップのサイズ
 const int kMapChipSize = 32;
 
@@ -25,14 +22,24 @@ enum BlockType {
 	GROUND,
 	BLOCK,
 	WONDERBLOCK,
-	FIXEDBLOCK
+	FIXEDBLOCK,
+	BBA,
+	BBC,
+	BBD,
+	BBE,
+	BBF,
+	BBG,
+	BBH,
+	//ブロックの最大数
+	MAXBLOCK,
 };
 
 enum TOOL
 {
 	BRUSH,
 	RANGEFILL,
-	SELECT
+	SELECT,
+	MAXTOOL,
 };
 
 //マップの操作を行うクラス
@@ -80,9 +87,6 @@ private:
 
 	//ファイルを閉じる
 	void Close();
-
-	//csv書き換えに使う文字列
-	char numStrings_[kMaxBlockType][2] = { "0", "1", "2", "3", "4" };
 
 	//書き換える配列の要素を格納するリスト。mapの要素、要素の行数、要素の列数の順に格納する
 	std::list<int> undoArrayList_;
@@ -138,6 +142,10 @@ private:
 	int drawX_;
 	int drawY_;
 
+	//範囲選択時のスクロール量調整
+	int32_t drawWidthScrollX_;
+	int32_t drawHeightScrollY_;
+
 	//画面外の表示を制限
 	int borderRight_;
 	int borderLeft_;
@@ -187,7 +195,8 @@ private:
 
 	//現在の機能
 	TOOL tool_ = BRUSH;
-	char toolString_[3][10] = { "Brush","RangeFill", "Select" };
+	std::array<std::string, 2> tools_ = { "Brush","RangeFill" };
+	/*char toolString_[3][10] = { "Brush","RangeFill", "Select" };*/
 
 	//範囲選択しているかどうか
 	bool isSelect_ = false;
