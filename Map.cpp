@@ -4,58 +4,63 @@
 #include <cassert>
 #include "Key.h"
 #include <imgui.h>
+#include <sstream>
+#include <iostream>
+#include <filesystem>
 
 Map::Map()
 {
 
-	Load();
+	mouseX_ = 0;
+	mouseY_ = 0;
+	mouseXGrid_ = 0;
+	mouseYGrid_ = 0;
 
-	mouseX = 0;
-	mouseY = 0;
-	mouseXGrid = 0;
-	mouseYGrid = 0;
+	tmpArrayX_ = 0;
+	tmpArrayY_ = 0;
+	tmpArrayType_ = 0;
 
-	tmpArrayX = 0;
-	tmpArrayY = 0;
-	tmpArrayType = 0;
+	blockNum_ = 0;
 
-	blockNum = 0;
+	isEdit_ = false;
+	isRangeFill_ = false;
+	isSelect_ = false;
+	isSave_ = true;
 
-	isEdit = false;
-	isRangeFill = false;
+	startRangeFillX_ = 0;
+	endRangeFillX_ = 0;
+	startRangeFillY_ = 0;
+	endRangeFillY_ = 0;
 
-	startRangeFillX = 0;
-	endRangeFillX = 0;
-	startRangeFillY = 0;
-	endRangeFillY = 0;
+	drawX_ = 0;
+	drawY_ = 0;
 
-	drawX = 0;
-	drawY = 0;
+	ImGuiPosX_ = 0;
+	ImGuiPosY_ = 0;
+	ImGuiWidth_ = 0;
+	ImGuiHeight_ = 0;
 
-	ImGuiPosX = 0;
-	ImGuiPosY = 0;
-	ImGuiWidth = 0;
-	ImGuiHeight = 0;
+	selectX_ = 0;
+	selectY_ = 0;
 
-	selectX = 0;
-	selectY = 0;
+	keyCount_ = kMaxKeyCount_;
 
-	keyCount = kMaxKeyCount;
+	borderRight_ = 1280 + kMapChipSize;
+	borderLeft_ = -kMapChipSize;
+	borderTop_ = -kMapChipSize;
+	borderDown_ = 720 + kMapChipSize;
 
-	borderRight = 1280 + kMapChipSize;
-	borderLeft = -kMapChipSize;
-	borderTop = -kMapChipSize;
-	borderDown = 720 + kMapChipSize;
+	tool_ = BRUSH;
 
-	textureHandle = Novice::LoadTexture("./Resources/Texture/block.png");
-	frameTexture = Novice::LoadTexture("./Resources/Texture/frameborder.png");
-	bgTexture = Novice::LoadTexture("./Resources/Texture/background.png");
-	groundTexture = Novice::LoadTexture("./Resources/Texture/ground.png");
-	blockTexture = Novice::LoadTexture("./Resources/Texture/block.png");
-	wonderBlockTexture = Novice::LoadTexture("./Resources/Texture/wonderblock.png");
-	fixedBlockTexture = Novice::LoadTexture("./Resources/Texture/fixedblock.png");
+	textureHandle_ = Novice::LoadTexture("./Resources/Texture/block.png");
+	frameTexture_ = Novice::LoadTexture("./Resources/Texture/frameborder.png");
+	bgTexture_ = Novice::LoadTexture("./Resources/Texture/background.png");
+	groundTexture_ = Novice::LoadTexture("./Resources/Texture/ground.png");
+	blockTexture_ = Novice::LoadTexture("./Resources/Texture/block.png");
+	wonderBlockTexture_ = Novice::LoadTexture("./Resources/Texture/wonderblock.png");
+	fixedBlockTexture_ = Novice::LoadTexture("./Resources/Texture/fixedblock.png");
 
-	color = 0xFFFFFFFF;
+	color_ = 0xFFFFFFFF;
 
 }
 
@@ -65,18 +70,143 @@ Map::~Map()
 
 void Map::Update() {
 
-	ImGui::Begin("Editor");
-	ImGuiPosX = ImGui::GetWindowPos().x;
-	ImGuiPosY = ImGui::GetWindowPos().y;
-	ImGuiWidth = ImGui::GetWindowSize().x;
-	ImGuiHeight = ImGui::GetWindowSize().y;
-	ImGui::DragInt("blockNum", &blockNum, 0.05f, 0, kMaxBlockType - 1);
-	ImGui::End();
+	//コントロールを押していない時
+	if (!Key::IsPress(DIK_LCONTROL)) {
 
-	Novice::GetMousePosition(&mouseX, &mouseY);
+		if (Key::IsPress(DIK_W)) {
+			
+			if (scrollY_ > 0) {
 
-	mouseXGrid = (mouseX) / kMapChipSize;
-	mouseYGrid = (mouseY) / kMapChipSize;
+				scrollY_ -= scrollValue_;
+
+				if (scrollY_ < 0) {
+					scrollY_ = 0;
+				}
+
+			}
+
+		}
+
+		else if (Key::IsPress(DIK_S)) {
+
+			if (scrollY_ < kScrollLimitY_) {
+
+				scrollY_ += scrollValue_;
+
+				if (scrollY_ > kScrollLimitY_) {
+					scrollY_ = kScrollLimitY_;
+				}
+
+			}
+
+		}
+
+		if (Key::IsPress(DIK_A)) {
+
+			if (scrollX_ > 0) {
+
+				scrollX_ -= scrollValue_;
+
+				if (scrollX_ < 0) {
+					scrollX_ = 0;
+				}
+
+			}
+
+		}
+
+		else if (Key::IsPress(DIK_D)) {
+
+			if (scrollX_ < kScrollLimitX_) {
+				
+				scrollX_ += scrollValue_;
+
+				if (scrollX_ > kScrollLimitX_) {
+					scrollX_ = kScrollLimitX_;
+				}
+
+			}
+
+		}
+
+	}
+
+
+	borderRight_ = scrollX_ + 1280 + kMapChipSize;
+	borderLeft_ = scrollX_ - kMapChipSize;
+	borderTop_ = scrollY_ - kMapChipSize;
+	borderDown_ = scrollY_ + 720 + kMapChipSize;
+
+	if (isEdit_) {
+
+		ImGui::Begin("Editor");
+		ImGuiPosX_ = ImGui::GetWindowPos().x;
+		ImGuiPosY_ = ImGui::GetWindowPos().y;
+		ImGuiWidth_ = ImGui::GetWindowSize().x;
+		ImGuiHeight_ = ImGui::GetWindowSize().y;
+
+		if (isOpenFile_) {
+
+			ImGui::DragInt("blockNum", &blockNum_, 0.05f, 0, kMaxBlockType - 1);
+			ImGui::InputText("tool", &toolString_[tool_][0], ImGuiInputTextFlags_ReadOnly);
+
+			if (ImGui::Button("Save")) {
+				Save();
+			}
+
+			if (ImGui::Button("Close")) {
+				Close();
+			}
+
+			if (ImGui::Button("Undo")) {
+				Undo();
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Redo")) {
+				Redo();
+			}
+
+		}
+		else {
+
+			ImGui::InputText(".csv", fileName_, sizeof(fileName_));
+
+			if (ImGui::Button("Create")) {
+
+				//ファイル名が空の場合スキップ
+				if (!CheckIsEmpty(fileName_)) {
+					Create();
+				}
+				else {
+					MessageBox(nullptr, L"ファイル名を入力してください。", L"Map Editor - Create", 0);
+				}
+
+			}
+
+			if (ImGui::Button("Load")) {
+
+				//ファイル名が空の場合スキップ
+				if (!CheckIsEmpty(fileName_)) {
+					Load();
+				}
+				else {
+					MessageBox(nullptr, L"ファイル名を入力してください。", L"Map Editor - Load", 0);
+				}
+
+			}
+
+		}
+
+		ImGui::End();
+
+	}
+
+	Novice::GetMousePosition(&mouseX_, &mouseY_);
+
+	mouseXGrid_ = (mouseX_) / kMapChipSize;
+	mouseYGrid_ = (mouseY_) / kMapChipSize;
 
 	Edit();
 
@@ -84,26 +214,26 @@ void Map::Update() {
 
 void Map::Draw() {
 
-	Novice::DrawQuad(0, 0, 1280, 0, 0, 720, 1280, 720, 0, 0, 1280, 720, bgTexture, 0xFFFFFFFF);
+	Novice::DrawQuad(0, 0, 1280, 0, 0, 720, 1280, 720, 0, 0, 1280, 720, bgTexture_, 0xFFFFFFFF);
 
 	for (int y = 0; y < kMaxHeight; y++) {
 		for (int x = 0; x < kMaxWidth; x++) {
 
-			SetState(map[y][x]);
+			SetState(map_[y][x]);
 
 			//画面範囲内なら表示
-			if (x * kMapChipSize < borderRight &&
-				x * kMapChipSize > borderLeft &&
-				y * kMapChipSize > borderTop &&
-				y * kMapChipSize < borderDown) {
+			if (x * kMapChipSize < borderRight_ &&
+				x * kMapChipSize > borderLeft_ &&
+				y * kMapChipSize > borderTop_ &&
+				y * kMapChipSize < borderDown_) {
 				
 				//ブロックがあったら表示
-				if (map[y][x] != NONE) {
-					Novice::DrawQuad(x * kMapChipSize, y * kMapChipSize,
-						x * kMapChipSize + kMapChipSize, y * kMapChipSize,
-						x * kMapChipSize, y * kMapChipSize + kMapChipSize,
-						x * kMapChipSize + kMapChipSize, y * kMapChipSize + kMapChipSize,
-						0, 0, 32, 32, textureHandle, color);
+				if (map_[y][x] != NONE) {
+					Novice::DrawQuad(x * kMapChipSize - scrollX_, y * kMapChipSize - scrollY_,
+						x * kMapChipSize + kMapChipSize - scrollX_, y * kMapChipSize - scrollY_,
+						x * kMapChipSize - scrollX_, y * kMapChipSize + kMapChipSize - scrollY_,
+						x * kMapChipSize + kMapChipSize - scrollX_, y * kMapChipSize + kMapChipSize - scrollY_,
+						0, 0, 32, 32, textureHandle_, color_);
 				}
 
 			}
@@ -111,23 +241,47 @@ void Map::Draw() {
 	}
 
 
-	Novice::ScreenPrintf(0, 20, "posX : %1.3f", ImGuiPosX);
-	Novice::ScreenPrintf(0, 40, "posY : %1.3f", ImGuiPosY);
-	Novice::ScreenPrintf(0, 60, "width : %1.3f", ImGuiWidth);
-	Novice::ScreenPrintf(0, 80, "height : %1.3f", ImGuiHeight);
+	if (isEdit_) {
 
-	if (isEdit) {
+		for (uint32_t y = 0; y < 4; y++) {
 
-		Novice::DrawQuad(0, 0, 1280, 0, 0, 800, 1280, 800, 0, 0, 1280, 800, frameTexture, 0xFFFFFF66);
+			for (uint32_t x = 0; x < 5; x++) {
 
-		Novice::ScreenPrintf(0, 0, "undoArrayList size : %d", undoArrayList.size());
-		Novice::ScreenPrintf(0, 20, "redoArrayList size : %d", redoArrayList.size());
-		Novice::ScreenPrintf(0, 40, "blockNumber : %d", blockNum);
+				Novice::DrawQuad(0 + x * 1280 - scrollX_, 0 + y * 800 - scrollY_,
+					1280 + x * 1280 - scrollX_, 0 + y * 800 - scrollY_,
+					0 + x * 1280 - scrollX_, 800 + y * 800 - scrollY_,
+					1280 + x * 1280 - scrollX_, 800 + y * 800 - scrollY_,
+					0, 0, 1280, 800, frameTexture_, 0xFFFFFF66);
 
-		Novice::DrawBox(selectX * kMapChipSize, selectY * kMapChipSize, kMapChipSize, kMapChipSize, 0.0f, 0xAA0000FF, kFillModeWireFrame);
+			}
 
-		if (Novice::IsPressMouse(1) && isRangeFill) {
-			Novice::DrawBox(drawX, drawY, mouseX - drawX, mouseY - drawY, 0.0f, 0x000000FF, kFillModeWireFrame);
+		}
+
+		if (Novice::IsPressMouse(0)) {
+			Novice::DrawEllipse(mouseX_, mouseY_, 5, 5, 0.0f, 0xFF0000FF, kFillModeSolid);
+		}
+		else {
+			Novice::DrawEllipse(mouseX_, mouseY_, 5, 5, 0.0f, 0xFFFFFFFF, kFillModeSolid);
+		}
+
+		Novice::ScreenPrintf(0, 0, "undoArrayList size : %d", undoArrayList_.size());
+		Novice::ScreenPrintf(0, 20, "redoArrayList size : %d", redoArrayList_.size());
+		Novice::ScreenPrintf(0, 40, "blockNumber : %d", blockNum_);
+
+		Novice::DrawBox(selectX_ * kMapChipSize, selectY_ * kMapChipSize, kMapChipSize, kMapChipSize, 0.0f, 0xAA0000FF, kFillModeWireFrame);
+
+		if (isRangeFill_ && tool_ == RANGEFILL) {
+			Novice::DrawBox(drawX_, drawY_, mouseX_ - drawX_, mouseY_ - drawY_, 0.0f, 0x000000FF, kFillModeWireFrame);
+		}
+		else if (isSelect_ && tool_ == SELECT) {
+			Novice::DrawBox(drawX_, drawY_, mouseX_ - drawX_, mouseY_ - drawY_, 0.0f, 0x0000FFFF, kFillModeWireFrame);
+		}
+
+		if (isSave_) {
+			Novice::DrawEllipse(1260, 20, 10, 10, 0.0f, 0x00FF00AA, kFillModeSolid);
+		}
+		else {
+			Novice::DrawEllipse(1260, 20, 10, 10, 0.0f, 0xFF0000AA, kFillModeSolid);
 		}
 
 	}
@@ -137,113 +291,165 @@ void Map::Draw() {
 void Map::Edit() {
 
 	//書き換えオンオフ設定
-	if (Key::IsTrigger(DIK_E)) {
+	if (Key::IsTrigger(DIK_RETURN)) {
 
-		if (isEdit) {
-			isEdit = false;
+		if (isEdit_) {
+			isEdit_ = false;
 		}
 		else {
-			isEdit = true;
+			isEdit_ = true;
 		}
 
 	}
 
-	if (isEdit == true) {
+	if (isEdit_ == true) {
 
-		//ブロック切り替え
-		if (Key::IsTrigger(DIK_W)) {
+		//コントロールを押していない時
+		if (!Key::IsPress(DIK_LCONTROL)) {
 
-			if (blockNum < kMaxBlockType - 1) {
-				blockNum++;
+			//ブロック切り替え
+			if (Key::IsTrigger(DIK_E)) {
+
+				if (blockNum_ < kMaxBlockType - 1) {
+					blockNum_++;
+				}
+
 			}
 
-		}
+			if (Key::IsTrigger(DIK_Q)) {
 
-		if (Key::IsTrigger(DIK_S)) {
+				if (blockNum_ > 0) {
+					blockNum_--;
+				}
 
-			if (blockNum > 0) {
-				blockNum--;
+			}
+
+			//機能切り替え
+			if (Key::IsTrigger(DIK_1)) {
+				tool_ = BRUSH;
+			}
+			else if (Key::IsTrigger(DIK_2)) {
+				tool_ = RANGEFILL;
+			}
+			else if (Key::IsTrigger(DIK_3)) {
+				tool_ = SELECT;
 			}
 
 		}
 
 		//ImGuiウィンドウの範囲内を反応させない
-		if (!(ImGuiPosX <= mouseX && mouseX <= ImGuiPosX + ImGuiWidth &&
-			ImGuiPosY <= mouseY && mouseY <= ImGuiPosY + ImGuiHeight)) {
+		if (!(ImGuiPosX_ <= mouseX_ && mouseX_ <= ImGuiPosX_ + ImGuiWidth_ &&
+			ImGuiPosY_ <= mouseY_ && mouseY_ <= ImGuiPosY_ + ImGuiHeight_)) {
 
 			//ボタンを押したらセレクト位置を決める
 			if (Novice::IsPressMouse(0) || Novice::IsPressMouse(1)) {
-				selectX = (mouseX) / kMapChipSize;
-				selectY = (mouseY) / kMapChipSize;
+				selectX_ = (mouseX_) / kMapChipSize;
+				selectY_ = (mouseY_) / kMapChipSize;
 			}
 
-			//単選択
-			if (Novice::IsPressMouse(0) && !Novice::IsPressMouse(1)) {
+			//左クリックした場合
+			if (Novice::IsPressMouse(0)) {
 
-				//マウスを押している間書き換える要素をリストに追加
-				Novice::GetMousePosition(&mouseX, &mouseY);
+				//現在の機能によって行うことを変える
+				switch (tool_)
+				{
+				case BRUSH:
+				default:
 
-				mouseXGrid = (mouseX) / kMapChipSize;
-				mouseYGrid = (mouseY) / kMapChipSize;
+					//単選択
 
-				//配列外参照を起こさない
-				mouseXGrid = Clamp(mouseXGrid, 0, kMaxWidth);
-				mouseYGrid = Clamp(mouseYGrid, 0, kMaxHeight);
+					//座標を決める
+					mouseXGrid_ = (mouseX_ + scrollX_) / kMapChipSize;
+					mouseYGrid_ = (mouseY_ + scrollY_) / kMapChipSize;
 
-				//画面外だったら書き換えない
-				if (mouseX < 1280 && mouseX > 0 &&
-					mouseY < 720 && mouseY > 0) {
+					//配列外参照を起こさない
+					mouseXGrid_ = Clamp(mouseXGrid_, 0, kMaxWidth - 1);
+					mouseYGrid_ = Clamp(mouseYGrid_, 0, kMaxHeight - 1);
 
-					//書き換える前と後の要素が同じ場合スルー
-					if (map[mouseYGrid][mouseXGrid] != blockNum) {
+					//画面外だったら書き換えない
+					if (mouseX_ < 1280 && mouseX_ > 0 &&
+						mouseY_ < 720 && mouseY_ > 0) {
 
-						//redoのリストに要素があった場合、空にする
-						if (redoArrayList.empty() != true) {
-							redoArrayList.clear();
-						}
+						//書き換える前と後の要素が同じ場合スルー
+						if (map_[mouseYGrid_][mouseXGrid_] != blockNum_) {
 
-						//redoのリスト(範囲塗りつぶし)に要素があった場合、空にする
-						if (redoFillArrayList.empty() != true) {
-							redoFillArrayList.clear();
-						}
-
-						//リストの最後尾に変更前の要素を追加
-						//マップのナンバーを最初に格納
-						undoArrayList.push_back(map[mouseYGrid][mouseXGrid]);
-						//行の数字を追加
-						undoArrayList.push_back(mouseYGrid);
-						//列の数字を追加
-						undoArrayList.push_back(mouseXGrid);
-
-						//サイズが一定値を超えたら古い順に削除
-						if (undoArrayList.size() > kMaxListSize) {
-							for (int i = 0; i < 3; i++) {
-								undoArrayList.pop_front();
+							//未セーブ状態を知らせる
+							if (isSave_) {
+								isSave_ = false;
 							}
-						}
 
-						//配列の要素を変更
-						map[mouseYGrid][mouseXGrid] = blockNum;
+							//redoのリストに要素があった場合、空にする
+							if (redoArrayList_.empty() != true) {
+								redoArrayList_.clear();
+							}
+
+							//redoのリスト(範囲塗りつぶし)に要素があった場合、空にする
+							if (redoFillArrayList_.empty() != true) {
+								redoFillArrayList_.clear();
+							}
+
+							//リストの最後尾に変更前の要素を追加
+							//マップのナンバーを最初に格納
+							undoArrayList_.push_back(map_[mouseYGrid_][mouseXGrid_]);
+							//行の数字を追加
+							undoArrayList_.push_back(mouseYGrid_);
+							//列の数字を追加
+							undoArrayList_.push_back(mouseXGrid_);
+
+							//サイズが一定値を超えたら古い順に削除
+							if (undoArrayList_.size() > kMaxListSize) {
+								for (int i = 0; i < 3; i++) {
+									undoArrayList_.pop_front();
+								}
+							}
+
+							//配列の要素を変更
+							map_[mouseYGrid_][mouseXGrid_] = blockNum_;
+
+						}
 
 					}
 
+					break;
+				case RANGEFILL:
+
+					//範囲塗りつぶし
+					if (isRangeFill_ == false) {
+						//塗りつぶし開始座標を決める
+						startRangeFillX_ = (mouseX_ + scrollX_) / kMapChipSize;
+						startRangeFillY_ = (mouseY_ + scrollY_) / kMapChipSize;
+
+						//四角形表示座標を決める
+						drawX_ = mouseX_;
+						drawY_ = mouseY_;
+
+						//フラグを立たせる
+						isRangeFill_ = true;
+					}
+
+					
+
+					break;
+				case SELECT:
+
+					//範囲選択
+					if (isSelect_ == false) {
+						//選択開始座標を決める
+						startRangeFillX_ = (mouseX_ + scrollX_) / kMapChipSize;
+						startRangeFillY_ = (mouseY_ + scrollY_) / kMapChipSize;
+
+						//四角形表示座標を決める
+						drawX_ = mouseX_;
+						drawY_ = mouseY_;
+
+						isSelect_ = true;
+					}
+
+					
+
+					break;
+				
 				}
-
-			}
-
-			//範囲塗りつぶし、範囲選択
-			if (Novice::IsPressMouse(1) && !isRangeFill) {
-
-				//塗りつぶし開始座標を決める
-				startRangeFillX = (mouseX) / kMapChipSize;
-				startRangeFillY = (mouseY) / kMapChipSize;
-
-				//四角形表示座標を決める
-				drawX = mouseX;
-				drawY = mouseY;
-
-				//フラグを立たせる
-				isRangeFill = true;
 
 			}
 
@@ -252,10 +458,26 @@ void Map::Edit() {
 		
 
 		//範囲塗りつぶし
-		if (isRangeFill && !Novice::IsPressMouse(1)) {
+		if (isRangeFill_ && !Novice::IsPressMouse(0) && tool_ == RANGEFILL) {
+
+			//未セーブ状態を知らせる
+			if (isSave_) {
+				isSave_ = false;
+			}
 
 			RangeFill();
 			
+		}
+
+		if (isSelect_ && !Novice::IsPressMouse(0) && tool_ == SELECT) {
+
+			//未セーブ状態を知らせる
+			if (isSave_) {
+				isSave_ = false;
+			}
+
+			Select();
+
 		}
 
 		if (Key::IsPress(DIK_LCONTROL)) {
@@ -264,29 +486,29 @@ void Map::Edit() {
 			if (Key::IsPress(DIK_Z)) {
 
 				//操作性向上の為に入力を管理
-				if (keyCount == kMaxKeyCount || (keyCount < 3 && keyCount % 3 == 0)) {
+				if (keyCount_ == kMaxKeyCount_ || (keyCount_ < 3 && keyCount_ % 3 == 0)) {
 					Undo();
 				}
 
-				if (keyCount == 0) {
-					keyCount = 3;
+				if (keyCount_ == 0) {
+					keyCount_ = 3;
 				}
 
-				keyCount--;
+				keyCount_--;
 
 			}
 			else if (Key::IsPress(DIK_Y)) {
 
 				//操作性向上の為に入力を管理
-				if (keyCount == kMaxKeyCount || (keyCount < 3 && keyCount % 3 == 0)) {
+				if (keyCount_ == kMaxKeyCount_ || (keyCount_ < 3 && keyCount_ % 3 == 0)) {
 					Redo();
 				}
 
-				if (keyCount == 0) {
-					keyCount = 3;
+				if (keyCount_ == 0) {
+					keyCount_ = 3;
 				}
 
-				keyCount--;
+				keyCount_--;
 
 			}
 			
@@ -298,8 +520,8 @@ void Map::Edit() {
 		}
 
 		//Z、Yどっちも押さずキーカウントが最大値でなければキーカウントリセット
-		if (keyCount != kMaxKeyCount && !Key::IsPress(DIK_Z) && !Key::IsPress(DIK_Y)) {
-			keyCount = kMaxKeyCount;
+		if (keyCount_ != kMaxKeyCount_ && !Key::IsPress(DIK_Z) && !Key::IsPress(DIK_Y)) {
+			keyCount_ = kMaxKeyCount_;
 		}
 
 	}
@@ -313,23 +535,23 @@ void Map::SetState(int mapNum) {
 	{
 	case NONE:
 	default:
-		color = 0xFFFFFFFF;
+		color_ = 0xFFFFFFFF;
 		break;
 	case GROUND:
-		color = 0xFFFFFFFF;
-		textureHandle = groundTexture;
+		color_ = 0xFFFFFFFF;
+		textureHandle_ = groundTexture_;
 		break;
 	case BLOCK:
-		color = 0xFFFFFFFF;
-		textureHandle = blockTexture;
+		color_ = 0xFFFFFFFF;
+		textureHandle_ = blockTexture_;
 		break;
 	case WONDERBLOCK:
-		color = 0xFFFFFFFF;
-		textureHandle = wonderBlockTexture;
+		color_ = 0xFFFFFFFF;
+		textureHandle_ = wonderBlockTexture_;
 		break;
 	case FIXEDBLOCK:
-		color = 0xFFFFFFFF;
-		textureHandle = fixedBlockTexture;
+		color_ = 0xFFFFFFFF;
+		textureHandle_ = fixedBlockTexture_;
 		break;
 	}
 
@@ -340,17 +562,34 @@ void Map::Load() {
 
 	FILE* fp = NULL;
 
-	fopen_s(&fp, "./Resources/Maps/map.csv", "rt");
+	std::string str = "./Resources/Maps/";
+
+	str += fileName_;
+
+	str += ".csv";
+
+	fopen_s(&fp, str.c_str(), "rb");
+
+	//指定したファイルが無かったらリターン
+	if (fp == NULL) {
+
+		MessageBox(nullptr, L"指定したファイルは存在しません", L"Map Load", 0);
+
+		return;
+
+	}
 
 	assert(fp != NULL);
 
 	for (int y = 0; y < kMaxHeight; y++) {
 		for (int x = 0; x < kMaxWidth; x++) {
-			fscanf_s(fp, "%d,", &map[y][x]);
+			fscanf_s(fp, "%d,", &map_[y][x]);
 		}
 	}
 
 	fclose(fp);
+
+	isOpenFile_ = true;
 
 }
 
@@ -358,8 +597,8 @@ void Map::Load() {
 void Map::RangeFill() {
 
 	//塗りつぶし終了座標を決める
-	endRangeFillX = (mouseX) / kMapChipSize;
-	endRangeFillY = (mouseY) / kMapChipSize;
+	endRangeFillX_ = (mouseX_ + scrollX_) / kMapChipSize;
+	endRangeFillY_ = (mouseY_ + scrollY_) / kMapChipSize;
 
 	//塗りつぶし範囲の左右、上下
 	int left = 0;
@@ -368,23 +607,23 @@ void Map::RangeFill() {
 	int bottom = 0;
 
 	//開始座標と終了座標のどっちが左かを確認する
-	if (startRangeFillX <= endRangeFillX) {
-		left = startRangeFillX;
-		right = endRangeFillX;
+	if (startRangeFillX_ <= endRangeFillX_) {
+		left = startRangeFillX_;
+		right = endRangeFillX_;
 	}
 	else {
-		left = endRangeFillX;
-		right = startRangeFillX;
+		left = endRangeFillX_;
+		right = startRangeFillX_;
 	}
 
 	//開始座標と終了座標のどっちが上かを確認する
-	if (startRangeFillY <= endRangeFillY) {
-		top = startRangeFillY;
-		bottom = endRangeFillY;
+	if (startRangeFillY_ <= endRangeFillY_) {
+		top = startRangeFillY_;
+		bottom = endRangeFillY_;
 	}
 	else {
-		top = endRangeFillY;
-		bottom = startRangeFillY;
+		top = endRangeFillY_;
+		bottom = startRangeFillY_;
 	}
 
 	//配列外参照にならないよう値を収める
@@ -398,45 +637,45 @@ void Map::RangeFill() {
 		for (int x = left; x < right + 1; x++) {
 
 			//redoのリストに要素があった場合、空にする
-			if (redoArrayList.empty() != true) {
-				redoArrayList.clear();
+			if (redoArrayList_.empty() != true) {
+				redoArrayList_.clear();
 			}
 
 			//redoのリスト(範囲塗りつぶし)に要素があった場合、空にする
-			if (redoFillArrayList.empty() != true) {
-				redoFillArrayList.clear();
+			if (redoFillArrayList_.empty() != true) {
+				redoFillArrayList_.clear();
 			}
 
 			//リストの最後尾に変更前の要素を追加
 			//マップのナンバーを格納
-			undoFillArrayList.push_back(map[y][x]);
+			undoFillArrayList_.push_back(map_[y][x]);
 
 			//サイズが一定値を超えたら古い順に削除
-			if (undoFillArrayList.size() > kMaxFillListSIze) {
+			if (undoFillArrayList_.size() > kMaxFillListSIze) {
 				for (int i = 0; i < 3; i++) {
-					undoFillArrayList.pop_front();
+					undoFillArrayList_.pop_front();
 				}
 			}
 
 			//配列の要素を変更
-			map[y][x] = blockNum;
+			map_[y][x] = blockNum_;
 
 		}
 	}
 
 	//範囲を格納
-	undoFillArrayList.push_back(left);
-	undoFillArrayList.push_back(right);
-	undoFillArrayList.push_back(top);
-	undoFillArrayList.push_back(bottom);
+	undoFillArrayList_.push_back(left);
+	undoFillArrayList_.push_back(right);
+	undoFillArrayList_.push_back(top);
+	undoFillArrayList_.push_back(bottom);
 
 	//範囲塗りつぶし用の値をundoリストに格納。値がずれないように三回行う
 	for (int i = 0; i < 3; i++) {
-		undoArrayList.push_back(-1);
+		undoArrayList_.push_back(-1);
 	}
 
 	//フラグを下げる
-	isRangeFill = false;
+	isRangeFill_ = false;
 
 }
 
@@ -445,20 +684,132 @@ void Map::Save() {
 
 	FILE* fp = NULL;
 
-	fopen_s(&fp, "./Resources/Maps/map.csv", "r+b");
+	std::string str = "./Resources/Maps/";
+
+	str += fileName_;
+
+	str += ".csv";
+
+	fopen_s(&fp, str.c_str(), "w+b");
+
+	if (fp == NULL) {
+
+		MessageBox(nullptr, L"ファイルが存在しません。", L"Map Load", 0);
+
+		return;
+
+	}
 
 	assert(fp != NULL);
 
 	for (int y = 0; y < kMaxHeight; y++) {
 		for (int x = 0; x < kMaxWidth; x++) {
-			//ファイルの書き込む場所を探す
-			fseek(fp, (y * (kMaxWidth * 2 + 2)) + (x * 2), SEEK_SET);
-			//指定した場所の値を書き換える
-			fputs(string[map[y][x]], fp);
+
+			//ファイルの書き込む場所を最後尾に設定
+			fseek(fp, 0, SEEK_END);
+			std::stringstream stream;
+			//数字を16進数に変換
+			stream << std::hex << map_[y][x];
+			std::string hexString = stream.str();
+			//カンマを追加
+			hexString += ",";
+			//x行が最大までいったら改行
+			if (x == kMaxWidth - 1) {
+				hexString += "\n";
+			}
+			//指定した場所の値を16進数で書き換える
+			fputs(hexString.c_str(), fp);
+
 		}
 	}
 
 	fclose(fp);
+
+	//ファイルが保存されたことを伝える
+	MessageBox(nullptr, L"ファイルを保存しました", L"Map Save", 0);
+
+	//セーブが完了したことを伝える
+	isSave_ = true;
+
+}
+
+void Map::Close() {
+
+	//セーブしていなかったら、セーブするかどうか聞く
+	if (!isSave_) {
+
+		if (MessageBox(nullptr, L"ファイルが保存されていません。保存しますか？", L"Map - Close", MB_OKCANCEL) == IDOK) {
+
+			Save();
+
+		}
+
+	}
+
+	isOpenFile_ = false;
+
+}
+
+void Map::Create() {
+
+	//読み込むJSONファイルのフルパスを合成する
+	std::string filePath = "./Resources/Maps/";
+
+	filePath += fileName_;
+
+	filePath += ".csv";
+
+	std::filesystem::path path(filePath);
+
+	//ファイルパスが存在するか確認
+	if (std::filesystem::exists(path)) {
+
+		if (MessageBox(nullptr, L"同名ファイルが既にあります。上書きしますか？", L"Map - Create", MB_OKCANCEL) == IDCANCEL) {
+
+			return;
+
+		}
+
+	}
+
+	FILE* fp = NULL;
+
+	fopen_s(&fp, filePath.c_str(), "w");
+
+	if (fp == NULL) {
+
+		MessageBox(nullptr, L"ファイルの作成に失敗しました。", L"Map Create", 0);
+
+		return;
+
+	}
+
+	assert(fp != NULL);
+
+	for (int y = 0; y < kMaxHeight; y++) {
+		for (int x = 0; x < kMaxWidth; x++) {
+
+			//ファイルの書き込む場所を最後尾に設定
+			fseek(fp, 0, SEEK_END);
+			std::stringstream stream;
+			//数字を16進数に変換
+			stream << std::hex << 0;
+			std::string hexString = stream.str();
+			//カンマを追加
+			hexString += ",";
+			//x行が最大までいったら改行
+			if (x == kMaxWidth - 1) {
+				hexString += "\n";
+			}
+			//指定した場所の値を16進数で書き換える
+			fputs(hexString.c_str(), fp);
+
+		}
+	}
+
+	fclose(fp);
+
+	isOpenFile_ = true;
 
 }
 
@@ -466,25 +817,25 @@ void Map::Save() {
 void Map::Undo() {
 
 	//リストが空でないときに処理
-	if (undoArrayList.empty() != true) {
+	if (undoArrayList_.empty() != true) {
 
 		//範囲塗りつぶしをしていたかどうか
-		if (undoArrayList.back() != -1) {
+		if (undoArrayList_.back() != -1) {
 
 			//要素を一つずつ取り出して削除、現在のマップを保管用リストに追加
-			tmpArrayX = undoArrayList.back();
-			undoArrayList.pop_back();
-			tmpArrayY = undoArrayList.back();
-			undoArrayList.pop_back();
-			tmpArrayType = undoArrayList.back();
-			undoArrayList.pop_back();
+			tmpArrayX_ = undoArrayList_.back();
+			undoArrayList_.pop_back();
+			tmpArrayY_ = undoArrayList_.back();
+			undoArrayList_.pop_back();
+			tmpArrayType_ = undoArrayList_.back();
+			undoArrayList_.pop_back();
 
-			redoArrayList.push_back(tmpArrayX);
-			redoArrayList.push_back(tmpArrayY);
-			redoArrayList.push_back(map[tmpArrayY][tmpArrayX]);
+			redoArrayList_.push_back(tmpArrayX_);
+			redoArrayList_.push_back(tmpArrayY_);
+			redoArrayList_.push_back(map_[tmpArrayY_][tmpArrayX_]);
 
 			//取り出した要素を使い書き換える前のマップに戻す
-			map[tmpArrayY][tmpArrayX] = tmpArrayType;
+			map_[tmpArrayY_][tmpArrayX_] = tmpArrayType_;
 
 		}
 		//範囲塗りつぶしの場合の処理
@@ -492,40 +843,40 @@ void Map::Undo() {
 
 			//undoリストから値を削除
 			for (int i = 0; i < 3; i++) {
-				undoArrayList.pop_back();
+				undoArrayList_.pop_back();
 			}
 
 			//範囲の要素を取り出し代入
-			int bottom = undoFillArrayList.back();
-			undoFillArrayList.pop_back();
-			int top = undoFillArrayList.back();
-			undoFillArrayList.pop_back();
-			int right = undoFillArrayList.back();
-			undoFillArrayList.pop_back();
-			int left = undoFillArrayList.back();
-			undoFillArrayList.pop_back();
+			int bottom = undoFillArrayList_.back();
+			undoFillArrayList_.pop_back();
+			int top = undoFillArrayList_.back();
+			undoFillArrayList_.pop_back();
+			int right = undoFillArrayList_.back();
+			undoFillArrayList_.pop_back();
+			int left = undoFillArrayList_.back();
+			undoFillArrayList_.pop_back();
 
 			//塗った時と逆の手順で塗りつぶしを行う
 			for (int y = bottom; y >= top; y--) {
 				for (int x = right; x >= left; x--) {
 					//タイプを格納
-					redoFillArrayList.push_back(map[y][x]);
+					redoFillArrayList_.push_back(map_[y][x]);
 					//要素を代入
-					map[y][x] = undoFillArrayList.back();
+					map_[y][x] = undoFillArrayList_.back();
 					//undo塗りつぶしリストの要素を削除
-					undoFillArrayList.pop_back();
+					undoFillArrayList_.pop_back();
 				}
 			}
 
 			//範囲を格納
-			redoFillArrayList.push_back(left);
-			redoFillArrayList.push_back(right);
-			redoFillArrayList.push_back(top);
-			redoFillArrayList.push_back(bottom);
+			redoFillArrayList_.push_back(left);
+			redoFillArrayList_.push_back(right);
+			redoFillArrayList_.push_back(top);
+			redoFillArrayList_.push_back(bottom);
 
 			//範囲塗りつぶし用の値をredoリストに格納。値がずれないように三回行う
 			for (int i = 0; i < 3; i++) {
-				redoArrayList.push_back(-1);
+				redoArrayList_.push_back(-1);
 			}
 
 		}
@@ -540,64 +891,64 @@ void Map::Undo() {
 void Map::Redo() {
 
 	//リストが空でないときに処理
-	if (redoArrayList.empty() != true) {
+	if (redoArrayList_.empty() != true) {
 
 		//範囲塗りつぶしをしていたかどうか
-		if (redoArrayList.back() != -1) {
+		if (redoArrayList_.back() != -1) {
 
 			//保管用のリストから要素を取り出して元のリストに戻し削除
-			tmpArrayType = redoArrayList.back();
-			redoArrayList.pop_back();
-			tmpArrayY = redoArrayList.back();
-			redoArrayList.pop_back();
-			tmpArrayX = redoArrayList.back();
-			redoArrayList.pop_back();
+			tmpArrayType_ = redoArrayList_.back();
+			redoArrayList_.pop_back();
+			tmpArrayY_ = redoArrayList_.back();
+			redoArrayList_.pop_back();
+			tmpArrayX_ = redoArrayList_.back();
+			redoArrayList_.pop_back();
 
-			undoArrayList.push_back(map[tmpArrayY][tmpArrayX]);
-			undoArrayList.push_back(tmpArrayY);
-			undoArrayList.push_back(tmpArrayX);
+			undoArrayList_.push_back(map_[tmpArrayY_][tmpArrayX_]);
+			undoArrayList_.push_back(tmpArrayY_);
+			undoArrayList_.push_back(tmpArrayX_);
 
 			//取り出した要素を使い元のマップに戻す
-			map[tmpArrayY][tmpArrayX] = tmpArrayType;
+			map_[tmpArrayY_][tmpArrayX_] = tmpArrayType_;
 
 		}
 		else {
 
 			//redoリストから値を削除
 			for (int i = 0; i < 3; i++) {
-				redoArrayList.pop_back();
+				redoArrayList_.pop_back();
 			}
 
 			//範囲の要素を取り出し代入
-			int bottom = redoFillArrayList.back();
-			redoFillArrayList.pop_back();
-			int top = redoFillArrayList.back();
-			redoFillArrayList.pop_back();
-			int right = redoFillArrayList.back();
-			redoFillArrayList.pop_back();
-			int left = redoFillArrayList.back();
-			redoFillArrayList.pop_back();
+			int bottom = redoFillArrayList_.back();
+			redoFillArrayList_.pop_back();
+			int top = redoFillArrayList_.back();
+			redoFillArrayList_.pop_back();
+			int right = redoFillArrayList_.back();
+			redoFillArrayList_.pop_back();
+			int left = redoFillArrayList_.back();
+			redoFillArrayList_.pop_back();
 
 			for (int y = top; y < bottom + 1; y++) {
 				for (int x = left; x < right + 1; x++) {
 					//タイプを格納
-					undoFillArrayList.push_back(map[y][x]);
+					undoFillArrayList_.push_back(map_[y][x]);
 					//要素を代入
-					map[y][x] = redoFillArrayList.back();
+					map_[y][x] = redoFillArrayList_.back();
 					//undo塗りつぶしリストの要素を削除
-					redoFillArrayList.pop_back();
+					redoFillArrayList_.pop_back();
 				}
 			}
 
 			//範囲を格納
-			undoFillArrayList.push_back(left);
-			undoFillArrayList.push_back(right);
-			undoFillArrayList.push_back(top);
-			undoFillArrayList.push_back(bottom);
+			undoFillArrayList_.push_back(left);
+			undoFillArrayList_.push_back(right);
+			undoFillArrayList_.push_back(top);
+			undoFillArrayList_.push_back(bottom);
 
 			//範囲塗りつぶし用の値をundoリストに格納。値がずれないように三回行う
 			for (int i = 0; i < 3; i++) {
-				undoArrayList.push_back(-1);
+				undoArrayList_.push_back(-1);
 			}
 
 		}
@@ -605,6 +956,10 @@ void Map::Redo() {
 		
 
 	}
+
+}
+
+void Map::Select() {
 
 }
 
@@ -619,5 +974,15 @@ int Map::Clamp(int x, int min, int max) {
 	}
 
 	return x;
+
+}
+
+bool Map::CheckIsEmpty(const std::string& name) {
+
+	if (name.empty()) {
+		return true;
+	}
+
+	return false;
 
 }
