@@ -7,6 +7,8 @@
 #include <sstream>
 #include <iostream>
 #include <filesystem>
+#include <json.hpp>
+#include <fstream>
 
 Map::Map()
 {
@@ -62,57 +64,35 @@ Map::Map()
 
 			isWrite_[y][x] = true;
 
-			//スタート地点付近作成
-			if (y < 5) {
-
-				isWrite_[y][x] = false;
-
-				
-
-			}
-			else if (y == 5) {
-
-				if ((x >= 8 && x <= 13) || (x >= 26 && x <= 31)) {
-					isWrite_[y][x] = false;
-				}
-				else if (x <= 5 || (x >= 16 && x <= 23) || x >= 34) {
-					isWrite_[y][x] = false;
-				}
-
-			}
-			else if (y == 6) {
-
-				if ((x >= 9 && x <= 12) || (x >= 27 && x <= 30)) {
-					isWrite_[y][x] = false;
-				}
-
-			}
-			//一番下を破壊できないブロックにする
-			else if (y == kMaxHeight - 1) {
-				isWrite_[y][x] = false;
-			}
-			//左右を破壊できないブロックにする
-			if (x == 0 || x == kMaxWidth - 1) {
-				isWrite_[y][x] = false;
-			}
-
 		}
 
 	}
 
-	textureHandle_ = Novice::LoadTexture("./Resources/textures/blocks/defaultRocks.png");
-	frameTexture_ = Novice::LoadTexture("./Resources/textures/frameborder.png");
-	bgTexture_ = Novice::LoadTexture("./Resources/textures/backGround/background.png");
-	unBreakBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/defaultRocks.png");
-	coldBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/rocks.png");
-	hotBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/rocks.png");
-	iceBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/rocks.png");
-	speedBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/blue.png");
-	digBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/green.png");
-	saunaBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/red.png");
-	downBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/down.png");
-	needleTex_ = Novice::LoadTexture("./Resources/textures/blocks/needle.png");
-	TNTTex_ = Novice::LoadTexture("./Resources/textures/blocks/bomb.png");
+	textureFileNames_.push_back("./Resources/Textures/Blocks/block0.png");
+	textureFileNames_.push_back("./Resources/Textures/Blocks/block1.png");
+	textureFileNames_.push_back("./Resources/Textures/Blocks/block2.png");
+	textureFileNames_.push_back("./Resources/Textures/Blocks/block3.png");
+	textureFileNames_.push_back("./Resources/Textures/Blocks/block4.png");
+	textureFileNames_.push_back("./Resources/Textures/Blocks/block5.png");
+	textureFileNames_.push_back("./Resources/Textures/Blocks/block6.png");
+	textureFileNames_.push_back("./Resources/Textures/Blocks/block7.png");
+	textureFileNames_.push_back("./Resources/Textures/Blocks/block8.png");
+	textureFileNames_.push_back("./Resources/Textures/Blocks/block9.png");
+	textureFileNames_.push_back("./Resources/Textures/Blocks/block10.png");
+
+	textureHandle_ = Novice::LoadTexture("./Resources/Textures/Blocks/block1.png");
+	frameTexture_ = Novice::LoadTexture("./Resources/Textures/frameborder.png");
+	bgTexture_ = Novice::LoadTexture("./Resources/Textures/backGround/background.png");
+	block1Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block1.png");
+	block2Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block2.png");
+	block3Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block3.png");
+	block4Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block4.png");
+	block5Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block5.png");
+	block6Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block6.png");
+	block7Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block7.png");
+	block8Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block8.png");
+	block9Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block9.png");
+	block10Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block10.png");
 
 	color_ = 0xFFFFFFFF;
 
@@ -226,16 +206,6 @@ void Map::Update() {
 
 			ImGui::DragInt("blockNum", &blockNum_, 0.05f, 0, BlockType::kMaxBlock - 1);
 
-			if (blockNum_ == kMagma) {
-
-				if (preBlockNum_ < kMagma) {
-					blockNum_++;
-				}
-				else {
-					blockNum_--;
-				}
-			}
-
 			ImGui::Text(blockNames_[blockNum_].c_str());
 
 			{
@@ -258,6 +228,7 @@ void Map::Update() {
 
 			if (ImGui::Button("Save")) {
 				Save();
+				SaveJson();
 			}
 
 			if (ImGui::Button("Close")) {
@@ -398,9 +369,6 @@ void Map::Draw() {
 
 	}
 
-	Novice::SetBlendMode(kBlendModeAdd);
-	Novice::DrawBox(0, 0, 1280, 720, 0.0f, 0xFFFFFF11, kFillModeSolid);
-
 }
 
 void Map::Edit() {
@@ -427,12 +395,6 @@ void Map::Edit() {
 
 				if (blockNum_ < BlockType::kMaxBlock - 1) {
 					blockNum_++;
-
-					//マグマ飛ばす
-					if (blockNum_ == kMagma) {
-						blockNum_++;
-					}
-
 				}
 
 			}
@@ -440,14 +402,7 @@ void Map::Edit() {
 			if (Key::IsTrigger(DIK_Q)) {
 
 				if (blockNum_ > 0) {
-
 					blockNum_--;
-
-					//マグマ飛ばす
-					if (blockNum_ == kMagma) {
-						blockNum_--;
-					}
-
 				}
 
 			}
@@ -541,16 +496,7 @@ void Map::Edit() {
 								}
 							}
 
-							//配列の要素を変更
-
-							//マグマなら極寒に切り替え
-							if (blockNum_ != kMagma) {
-								map_[mouseYGrid_][mouseXGrid_] = blockNum_;
-							}
-							else {
-								
-							}
-
+							map_[mouseYGrid_][mouseXGrid_] = blockNum_;
 
 						}
 
@@ -684,63 +630,47 @@ void Map::SetState(int mapNum) {
 	{
 	case kNone:
 	default:
-		color_ = 0x000000FF;
+		color_ = 0x00000000;
 		break;
-	case kUnbreakable:
-		color_ = 0xBBBBBBFF;
-		textureHandle_ = unBreakBlockTex_;
-		break;
-	case kSnow:
-		color_ = 0xAAAAFFFF;
-		textureHandle_ = coldBlockTex_;
-		break;
-	case kMagma:
-		color_ = 0xFFAAAAFF;
-		textureHandle_ = hotBlockTex_;
-		break;
-	case kIceBlock:
-		color_ = 0xDDDDFFFF;
-		textureHandle_ = unBreakBlockTex_;
-		break;
-	case kSpeedBlock:
-		color_ = 0x8888AAFF;
-		textureHandle_ = saunaBlockTex_;
-		break;
-	case kDigerBlock:
-		color_ = 0x88AA88FF;
-		textureHandle_ = digBlockTex_;
-		break;
-	case kSaunnerBlock:
-		color_ = 0xAA8888FF;
-		textureHandle_ = speedBlockTex_;
-		break;
-	case kDownMagma:
+	case kBlock1:
 		color_ = 0xFFFFFFFF;
-		textureHandle_ = downBlockTex_;
+		textureHandle_ = block1Tex_;
 		break;
-	case kGoldBlock:
-		color_ = 0xFFFF00FF;
-		textureHandle_ = unBreakBlockTex_;
-		break;
-	case kFlag:
+	case kBlock2:
 		color_ = 0xFFFFFFFF;
-		textureHandle_ = unBreakBlockTex_;
+		textureHandle_ = block2Tex_;
 		break;
-	case kCollapse:
+	case kBlock3:
 		color_ = 0xFFFFFFFF;
-		textureHandle_ = coldBlockTex_;
+		textureHandle_ = block3Tex_;
 		break;
-	case kEnemyBlock:
-		color_ = 0xFF0000FF;
-		textureHandle_ = coldBlockTex_;
-		break;
-	case kNeedleBlock:
-		color_ = 0xDDDDFFFF;
-		textureHandle_ = needleTex_;
-		break;
-	case kTNTBlock:
+	case kBlock4:
 		color_ = 0xFFFFFFFF;
-		textureHandle_ = TNTTex_;
+		textureHandle_ = block4Tex_;
+		break;
+	case kBlock5:
+		color_ = 0xFFFFFFFF;
+		textureHandle_ = block5Tex_;
+		break;
+	case kBlock6:
+		color_ = 0xFFFFFFFF;
+		textureHandle_ = block6Tex_;
+		break;
+	case kBlock7:
+		color_ = 0xFFFFFFFF;
+		textureHandle_ = block7Tex_;
+		break;
+	case kBlock8:
+		color_ = 0xFFFFFFFF;
+		textureHandle_ = block8Tex_;
+		break;
+	case kBlock9:
+		color_ = 0xFFFFFFFF;
+		textureHandle_ = block9Tex_;
+		break;
+	case kBlock10:
+		color_ = 0xFFFFFFFF;
+		textureHandle_ = block10Tex_;
 		break;
 	}
 
@@ -776,82 +706,15 @@ void Map::Load() {
 		}
 	}
 
-	//一部の場所は固定ブロックに変更
-	for (uint32_t y = 0; y < kMaxHeight; y++) {
-
-		for (uint32_t x = 0; x < kMaxWidth; x++) {
-
-			//スタート地点付近作成
-			if (y < 5) {
-
-				map_[y][x] = 1;
-
-				//一部は空白に変更
-				if (y == 0) {
-
-					if ((x >= 10 && x <= 11) || (x >= 28 && x <= 29)) {
-						map_[y][x] = 0;
-					}
-
-				}
-				else {
-
-					if ((x >= 8 && x <= 13) || (x >= 26 && x <= 31)) {
-						map_[y][x] = 0;
-					}
-
-					if (y == 1 || y == 4) {
-
-						if ((x >= 17 && x <= 18) || (x >= 21 && x <= 22)) {
-							map_[y][x] = 0;
-						}
-
-					}
-					else {
-
-						if ((x >= 14 && x <= 18) || (x >= 21 && x <= 25)) {
-							map_[y][x] = 0;
-						}
-
-					}
-
-				}
-
-			}
-			else if (y == 5) {
-
-				if ((x >= 8 && x <= 13) || (x >= 26 && x <= 31)) {
-					map_[y][x] = 0;
-				}
-				else if (x <= 5 || (x >= 16 && x <= 23) || x >= 34) {
-					map_[y][x] = 1;
-				}
-
-			}
-			else if (y == 6) {
-
-				if ((x >= 9 && x <= 12) || (x >= 27 && x <= 30)) {
-					map_[y][x] = 1;
-				}
-
-			}
-			//一番下を破壊できないブロックにする
-			else if (y == kMaxHeight - 1) {
-				map_[y][x] = 1;
-			}
-			//左右を破壊できないブロックにする
-			if (x == 0 || x == kMaxWidth - 1) {
-				map_[y][x] = 1;
-			}
-
-		}
-
-	}
-
-
 	fclose(fp);
 
 	isOpenFile_ = true;
+
+}
+
+void Map::LoadJson() {
+
+	
 
 }
 
@@ -1000,6 +863,80 @@ void Map::Save() {
 
 }
 
+void Map::SaveJson() {
+
+	nlohmann::json root;
+
+	root = nlohmann::json::object();
+
+	root["objects"] = nlohmann::json::array();
+
+	for (int32_t y = 0; y < kMaxHeight; y++) {
+
+		for (int32_t x = 0; x < kMaxWidth; x++) {
+
+			if (map_[y][x] != 0) {
+
+				root["objects"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"] = nlohmann::json::array();
+
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["BlendType"] = "kNone";
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderDataComp";
+				root["objects"].back()["Comps"].back()["color"] = nlohmann::json::array({ 1.0f,1.0f,1.0f,1.0f });
+				root["objects"].back()["Comps"].back()["fileName"] = textureFileNames_[map_[y][x]];
+				root["objects"].back()["Comps"].back()["offsetType"] = "kMiddle";
+
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderComp";
+
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class TransformComp";
+				root["objects"].back()["Comps"].back()["scale"] =
+					nlohmann::json::array({ 1.0f, 1.0f, 1.0f });
+				root["objects"].back()["Comps"].back()["rotate"] =
+					nlohmann::json::array({ 0.0f, 0.0f, 0.0f, 1.0f });
+				root["objects"].back()["Comps"].back()["translate"] =
+					nlohmann::json::array({ float(x * kMapChipSize), -float(y * kMapChipSize), 0.0f });
+
+			}
+
+		}
+
+	}
+
+	std::string str = "./Resources/Maps/";
+
+	//ディレクトリが無ければ作成する
+	std::filesystem::path dir(str);
+	if (!std::filesystem::exists(dir)) {
+		std::filesystem::create_directory(dir);
+	}
+
+	//書き込むJSONファイルのフルパスを合成する
+	std::string filePath = str + fileName_ + ".json";
+	//書き込み用ファイルストリーム
+	std::ofstream ofs;
+	//ファイルを書き込み用に開く
+	ofs.open(filePath);
+
+	//ファイルオープン失敗したら表示
+	if (ofs.fail()) {
+		MessageBox(nullptr, L"ファイルを開くのに失敗しました。", L"Map Editor - Save", 0);
+		return;
+	}
+
+	//ファイルにjson文字列を書き込む(インデント幅4)
+	ofs << std::setw(4) << root << std::endl;
+	//ファイルを閉じる
+	ofs.close();
+
+	MessageBox(nullptr, L"セーブしました。", L"Map Editor - Save", 0);
+
+	isSave_ = true;
+
+}
+
 void Map::Close() {
 
 	//セーブしていなかったら、セーブするかどうか聞く
@@ -1075,68 +1012,7 @@ void Map::Create() {
 			fseek(fp, 0, SEEK_END);
 			std::stringstream stream;
 
-			//スタート地点付近作成
-			if (y < 5) {
-
-				map_[y][x] = 1;
-
-				//一部は空白に変更
-				if (y == 0) {
-
-					if ((x >= 10 && x <= 11) || (x >= 28 && x <= 29)) {
-						map_[y][x] = 0;
-					}
-
-				}
-				else {
-
-					if ((x >= 8 && x <= 13) || (x >= 26 && x <= 31)) {
-						map_[y][x] = 0;
-					}
-
-					if (y == 1 || y == 4) {
-
-						if ((x >= 17 && x <= 18) || (x >= 21 && x <= 22)) {
-							map_[y][x] = 0;
-						}
-
-					}
-					else {
-
-						if ((x >= 14 && x <= 18) || (x >= 21 && x <= 25)) {
-							map_[y][x] = 0;
-						}
-
-					}
-
-				}
-
-			}
-			else if (y == 5) {
-
-				if ((x >= 8 && x <= 13) || (x >= 26 && x <= 31)) {
-					map_[y][x] = 0;
-				}
-				else if (x <= 5 || (x >= 16 && x <= 23) || x >= 34) {
-					map_[y][x] = 1;
-				}
-
-			}
-			else if (y == 6) {
-
-				if ((x >= 9 && x <= 12) || (x >= 27 && x <= 30)) {
-					map_[y][x] = 1;
-				}
-
-			}
-			//一番下を破壊できないブロックにする
-			else if (y == kMaxHeight - 1) {
-				map_[y][x] = 1;
-			}
-			//左右を破壊できないブロックにする
-			if (x == 0 || x == kMaxWidth - 1) {
-				map_[y][x] = 1;
-			}
+			map_[y][x] = 0;
 
 			//数字を16進数に変換
 			stream << std::hex << map_[y][x];

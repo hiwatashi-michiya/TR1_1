@@ -2,11 +2,12 @@
 #include <list>
 #include <array>
 #include <string>
+#include <vector>
 
 //横最大幅
-const int kMaxWidth = 40;
+const int kMaxWidth = 120;
 //縦最大幅
-const int kMaxHeight = 100;
+const int kMaxHeight = 30;
 
 //マップチップのサイズ
 const int kMapChipSize = 32;
@@ -20,20 +21,16 @@ const int64_t kMaxFillListSIze = kMaxWidth * kMaxHeight * kMaxListSize;
 enum BlockType {
 	
 	kNone, //空白
-	kUnbreakable, //壊せない
-	kSnow, //極寒
-	kMagma, //灼熱
-	kIceBlock, //氷
-	kSpeedBlock, //速度
-	kDigerBlock, //採掘
-	kSaunnerBlock, //サウナアア
-	kDownMagma, //熱源ライン下げる
-	kGoldBlock, //黄金
-	kFlag, //フラグブロック
-	kCollapse, //崩壊ブロック
-	kEnemyBlock, //敵ブロック
-	kNeedleBlock, //トゲ
-	kTNTBlock, //TNT
+	kBlock1,
+	kBlock2,
+	kBlock3,
+	kBlock4,
+	kBlock5,
+	kBlock6,
+	kBlock7,
+	kBlock8,
+	kBlock9,
+	kBlock10,
 	kMaxBlock,//ブロックの最大数
 
 };
@@ -86,6 +83,12 @@ private:
 	//csvセーブ
 	void Save();
 
+	//jsonロード
+	void LoadJson();
+
+	//jsonセーブ
+	void SaveJson();
+
 	//ファイル作成関数
 	void Create();
 
@@ -93,8 +96,8 @@ private:
 	void Close();
 
 	//テキスト説明
-	std::array<std::string, kMaxBlock> blockNames_ = { "None", "Unbreak", "Normal", "Normal", "Ice", "Red", "Green", "Blue", "Down", "Gold",
-	"Flag", "Collapse", "Enemy", "Needle", "TNT" };
+	std::array<std::string, kMaxBlock> blockNames_ = { "None", "Block1", "Block2", "Block3", "Block4", "Block5", "Block6", "Block7", 
+		"Block8", "Block9", "Block10" };
 
 	//ImGuiをタッチしたか
 	bool isTouchGui_ = false;
@@ -202,16 +205,18 @@ private:
 
 	//その他画像
 	int bgTexture_;
-	int unBreakBlockTex_;
-	int coldBlockTex_;
-	int hotBlockTex_;
-	int iceBlockTex_;
-	int speedBlockTex_;
-	int digBlockTex_;
-	int saunaBlockTex_;
-	int downBlockTex_;
-	int needleTex_;
-	int TNTTex_;
+	int block1Tex_;
+	int block2Tex_;
+	int block3Tex_;
+	int block4Tex_;
+	int block5Tex_;
+	int block6Tex_;
+	int block7Tex_;
+	int block8Tex_;
+	int block9Tex_;
+	int block10Tex_;
+
+	std::vector<std::string> textureFileNames_;
 
 	//現在の機能
 	TOOL tool_ = BRUSH;
