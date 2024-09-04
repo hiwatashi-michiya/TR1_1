@@ -4,7 +4,7 @@
 #include <string>
 
 //横最大幅
-const int kMaxWidth = 200;
+const int kMaxWidth = 40;
 //縦最大幅
 const int kMaxHeight = 100;
 
@@ -18,20 +18,24 @@ const int kMaxListSize = 900;
 const int64_t kMaxFillListSIze = kMaxWidth * kMaxHeight * kMaxListSize;
 
 enum BlockType {
-	NONE,
-	GROUND,
-	BLOCK,
-	WONDERBLOCK,
-	FIXEDBLOCK,
-	BBA,
-	BBC,
-	BBD,
-	BBE,
-	BBF,
-	BBG,
-	BBH,
-	//ブロックの最大数
-	MAXBLOCK,
+	
+	kNone, //空白
+	kUnbreakable, //壊せない
+	kSnow, //極寒
+	kMagma, //灼熱
+	kIceBlock, //氷
+	kSpeedBlock, //速度
+	kDigerBlock, //採掘
+	kSaunnerBlock, //サウナアア
+	kDownMagma, //熱源ライン下げる
+	kGoldBlock, //黄金
+	kFlag, //フラグブロック
+	kCollapse, //崩壊ブロック
+	kEnemyBlock, //敵ブロック
+	kNeedleBlock, //トゲ
+	kTNTBlock, //TNT
+	kMaxBlock,//ブロックの最大数
+
 };
 
 enum TOOL
@@ -88,6 +92,13 @@ private:
 	//ファイルを閉じる
 	void Close();
 
+	//テキスト説明
+	std::array<std::string, kMaxBlock> blockNames_ = { "None", "Unbreak", "Normal", "Normal", "Ice", "Red", "Green", "Blue", "Down", "Gold",
+	"Flag", "Collapse", "Enemy", "Needle", "TNT" };
+
+	//ImGuiをタッチしたか
+	bool isTouchGui_ = false;
+
 	//書き換える配列の要素を格納するリスト。mapの要素、要素の行数、要素の列数の順に格納する
 	std::list<int> undoArrayList_;
 
@@ -110,6 +121,8 @@ private:
 
 	//マップチップの数
 	int map_[kMaxHeight][kMaxWidth];
+	//書き換え可能かどうか
+	bool isWrite_[kMaxHeight][kMaxWidth];
 
 	//マウスX座標
 	int mouseX_;
@@ -122,6 +135,7 @@ private:
 
 	//設置するブロックのナンバー
 	int blockNum_;
+	int preBlockNum_;
 
 	//マップ書き換え可能かどうか
 	bool isEdit_;
@@ -156,8 +170,8 @@ private:
 	int32_t scrollX_ = 0;
 	int32_t scrollY_ = 0;
 
-	int32_t kScrollLimitX_ = 6400 - 1280;
-	int32_t kScrollLimitY_ = 3200 - 720;
+	int32_t kScrollLimitX_ = kMaxWidth * kMapChipSize - 1280;
+	int32_t kScrollLimitY_ = kMaxHeight * kMapChipSize - 720;
 
 	//スクロールの移動値
 	uint32_t scrollValue_ = 20;
@@ -188,10 +202,16 @@ private:
 
 	//その他画像
 	int bgTexture_;
-	int groundTexture_;
-	int blockTexture_;
-	int wonderBlockTexture_;
-	int fixedBlockTexture_;
+	int unBreakBlockTex_;
+	int coldBlockTex_;
+	int hotBlockTex_;
+	int iceBlockTex_;
+	int speedBlockTex_;
+	int digBlockTex_;
+	int saunaBlockTex_;
+	int downBlockTex_;
+	int needleTex_;
+	int TNTTex_;
 
 	//現在の機能
 	TOOL tool_ = BRUSH;

@@ -11,6 +11,8 @@
 Map::Map()
 {
 
+	isTouchGui_ = false;
+
 	mouseX_ = 0;
 	mouseY_ = 0;
 	mouseXGrid_ = 0;
@@ -21,6 +23,7 @@ Map::Map()
 	tmpArrayType_ = 0;
 
 	blockNum_ = 0;
+	preBlockNum_ = 0;
 
 	isEdit_ = true;
 	isRangeFill_ = false;
@@ -52,13 +55,64 @@ Map::Map()
 
 	tool_ = BRUSH;
 
-	textureHandle_ = Novice::LoadTexture("./Resources/Texture/block.png");
-	frameTexture_ = Novice::LoadTexture("./Resources/Texture/frameborder.png");
-	bgTexture_ = Novice::LoadTexture("./Resources/Texture/background.png");
-	groundTexture_ = Novice::LoadTexture("./Resources/Texture/ground.png");
-	blockTexture_ = Novice::LoadTexture("./Resources/Texture/block.png");
-	wonderBlockTexture_ = Novice::LoadTexture("./Resources/Texture/wonderblock.png");
-	fixedBlockTexture_ = Novice::LoadTexture("./Resources/Texture/fixedblock.png");
+	//一部の場所は固定ブロックに変更
+	for (uint32_t y = 0; y < kMaxHeight; y++) {
+
+		for (uint32_t x = 0; x < kMaxWidth; x++) {
+
+			isWrite_[y][x] = true;
+
+			//スタート地点付近作成
+			if (y < 5) {
+
+				isWrite_[y][x] = false;
+
+				
+
+			}
+			else if (y == 5) {
+
+				if ((x >= 8 && x <= 13) || (x >= 26 && x <= 31)) {
+					isWrite_[y][x] = false;
+				}
+				else if (x <= 5 || (x >= 16 && x <= 23) || x >= 34) {
+					isWrite_[y][x] = false;
+				}
+
+			}
+			else if (y == 6) {
+
+				if ((x >= 9 && x <= 12) || (x >= 27 && x <= 30)) {
+					isWrite_[y][x] = false;
+				}
+
+			}
+			//一番下を破壊できないブロックにする
+			else if (y == kMaxHeight - 1) {
+				isWrite_[y][x] = false;
+			}
+			//左右を破壊できないブロックにする
+			if (x == 0 || x == kMaxWidth - 1) {
+				isWrite_[y][x] = false;
+			}
+
+		}
+
+	}
+
+	textureHandle_ = Novice::LoadTexture("./Resources/textures/blocks/defaultRocks.png");
+	frameTexture_ = Novice::LoadTexture("./Resources/textures/frameborder.png");
+	bgTexture_ = Novice::LoadTexture("./Resources/textures/backGround/background.png");
+	unBreakBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/defaultRocks.png");
+	coldBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/rocks.png");
+	hotBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/rocks.png");
+	iceBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/rocks.png");
+	speedBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/blue.png");
+	digBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/green.png");
+	saunaBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/red.png");
+	downBlockTex_ = Novice::LoadTexture("./Resources/textures/blocks/down.png");
+	needleTex_ = Novice::LoadTexture("./Resources/textures/blocks/needle.png");
+	TNTTex_ = Novice::LoadTexture("./Resources/textures/blocks/bomb.png");
 
 	color_ = 0xFFFFFFFF;
 
@@ -74,6 +128,8 @@ Map::~Map()
 }
 
 void Map::Update() {
+
+	preBlockNum_ = blockNum_;
 
 	//コントロールを押していない時
 	if (!Key::IsPress(DIK_LCONTROL) && isOpenFile_) {
@@ -168,7 +224,19 @@ void Map::Update() {
 
 		if (isOpenFile_) {
 
-			ImGui::DragInt("blockNum", &blockNum_, 0.05f, 0, BlockType::MAXBLOCK - 1);
+			ImGui::DragInt("blockNum", &blockNum_, 0.05f, 0, BlockType::kMaxBlock - 1);
+
+			if (blockNum_ == kMagma) {
+
+				if (preBlockNum_ < kMagma) {
+					blockNum_++;
+				}
+				else {
+					blockNum_--;
+				}
+			}
+
+			ImGui::Text(blockNames_[blockNum_].c_str());
 
 			{
 
@@ -269,7 +337,7 @@ void Map::Draw() {
 				y * kMapChipSize < borderDown_) {
 				
 				//ブロックがあったら表示
-				if (map_[y][x] != NONE) {
+				if (map_[y][x] != kNone) {
 					Novice::DrawQuad(x * kMapChipSize - scrollX_, y * kMapChipSize - scrollY_,
 						x * kMapChipSize + kMapChipSize - scrollX_, y * kMapChipSize - scrollY_,
 						x * kMapChipSize - scrollX_, y * kMapChipSize + kMapChipSize - scrollY_,
@@ -292,17 +360,18 @@ void Map::Draw() {
 					1280 + x * 1280 - scrollX_, 0 + y * 800 - scrollY_,
 					0 + x * 1280 - scrollX_, 800 + y * 800 - scrollY_,
 					1280 + x * 1280 - scrollX_, 800 + y * 800 - scrollY_,
-					0, 0, 1280, 800, frameTexture_, 0xFFFFFF66);
+					0, 0, 1280, 800, frameTexture_, 0xFFFFFF22);
 
 			}
 
 		}
 
-		if (Novice::IsPressMouse(0)) {
-			Novice::DrawEllipse(mouseX_, mouseY_, 5, 5, 0.0f, 0xFF0000FF, kFillModeSolid);
-		}
-		else {
-			Novice::DrawEllipse(mouseX_, mouseY_, 5, 5, 0.0f, 0xFFFFFFFF, kFillModeSolid);
+		SetState(blockNum_);
+
+		if (blockNum_ != 0) {
+			Novice::DrawQuad(mouseX_ - 16, mouseY_ - 16, mouseX_ + 16, mouseY_ - 16,
+				mouseX_ - 16, mouseY_ + 16, mouseX_ + 16, mouseY_ + 16,
+				0, 0, 32, 32, textureHandle_, color_);
 		}
 
 		Novice::ScreenPrintf(0, 0, "undoArrayList size : %d", undoArrayList_.size());
@@ -329,6 +398,9 @@ void Map::Draw() {
 
 	}
 
+	Novice::SetBlendMode(kBlendModeAdd);
+	Novice::DrawBox(0, 0, 1280, 720, 0.0f, 0xFFFFFF11, kFillModeSolid);
+
 }
 
 void Map::Edit() {
@@ -353,8 +425,14 @@ void Map::Edit() {
 			//ブロック切り替え
 			if (Key::IsTrigger(DIK_E)) {
 
-				if (blockNum_ < BlockType::MAXBLOCK - 1) {
+				if (blockNum_ < BlockType::kMaxBlock - 1) {
 					blockNum_++;
+
+					//マグマ飛ばす
+					if (blockNum_ == kMagma) {
+						blockNum_++;
+					}
+
 				}
 
 			}
@@ -362,7 +440,14 @@ void Map::Edit() {
 			if (Key::IsTrigger(DIK_Q)) {
 
 				if (blockNum_ > 0) {
+
 					blockNum_--;
+
+					//マグマ飛ばす
+					if (blockNum_ == kMagma) {
+						blockNum_--;
+					}
+
 				}
 
 			}
@@ -380,9 +465,19 @@ void Map::Edit() {
 
 		}
 
+		//ImGuiウィンドウ内で触っていたらマップの塗りつぶしをしないようにする
+		if (Novice::IsTriggerMouse(0) && (ImGuiPosX_ <= mouseX_ && mouseX_ <= ImGuiPosX_ + ImGuiWidth_ &&
+			ImGuiPosY_ <= mouseY_ && mouseY_ <= ImGuiPosY_ + ImGuiHeight_)) {
+			isTouchGui_ = true;
+		}
+
+		if (isTouchGui_ && !Novice::IsPressMouse(0)) {
+			isTouchGui_ = false;
+		}
+
 		//ImGuiウィンドウの範囲内を反応させない
 		if (!(ImGuiPosX_ <= mouseX_ && mouseX_ <= ImGuiPosX_ + ImGuiWidth_ &&
-			ImGuiPosY_ <= mouseY_ && mouseY_ <= ImGuiPosY_ + ImGuiHeight_)) {
+			ImGuiPosY_ <= mouseY_ && mouseY_ <= ImGuiPosY_ + ImGuiHeight_) && !isTouchGui_) {
 
 			//ボタンを押したらセレクト位置を決める
 			if (Novice::IsPressMouse(0) || Novice::IsPressMouse(1)) {
@@ -413,8 +508,8 @@ void Map::Edit() {
 					if (mouseX_ < 1280 && mouseX_ > 0 &&
 						mouseY_ < 720 && mouseY_ > 0) {
 
-						//書き換える前と後の要素が同じ場合スルー
-						if (map_[mouseYGrid_][mouseXGrid_] != blockNum_) {
+						//書き換える前と後の要素が同じ場合か書き換え不可の場合スルー
+						if (map_[mouseYGrid_][mouseXGrid_] != blockNum_ && isWrite_[mouseYGrid_][mouseXGrid_]) {
 
 							//未セーブ状態を知らせる
 							if (isSave_) {
@@ -447,7 +542,15 @@ void Map::Edit() {
 							}
 
 							//配列の要素を変更
-							map_[mouseYGrid_][mouseXGrid_] = blockNum_;
+
+							//マグマなら極寒に切り替え
+							if (blockNum_ != kMagma) {
+								map_[mouseYGrid_][mouseXGrid_] = blockNum_;
+							}
+							else {
+								
+							}
+
 
 						}
 
@@ -579,54 +682,65 @@ void Map::SetState(int mapNum) {
 
 	switch (mapNum)
 	{
-	case NONE:
+	case kNone:
 	default:
 		color_ = 0x000000FF;
-		textureHandle_ = groundTexture_;
 		break;
-	case GROUND:
+	case kUnbreakable:
+		color_ = 0xBBBBBBFF;
+		textureHandle_ = unBreakBlockTex_;
+		break;
+	case kSnow:
+		color_ = 0xAAAAFFFF;
+		textureHandle_ = coldBlockTex_;
+		break;
+	case kMagma:
+		color_ = 0xFFAAAAFF;
+		textureHandle_ = hotBlockTex_;
+		break;
+	case kIceBlock:
+		color_ = 0xDDDDFFFF;
+		textureHandle_ = unBreakBlockTex_;
+		break;
+	case kSpeedBlock:
+		color_ = 0x8888AAFF;
+		textureHandle_ = saunaBlockTex_;
+		break;
+	case kDigerBlock:
+		color_ = 0x88AA88FF;
+		textureHandle_ = digBlockTex_;
+		break;
+	case kSaunnerBlock:
+		color_ = 0xAA8888FF;
+		textureHandle_ = speedBlockTex_;
+		break;
+	case kDownMagma:
 		color_ = 0xFFFFFFFF;
-		textureHandle_ = groundTexture_;
+		textureHandle_ = downBlockTex_;
 		break;
-	case BLOCK:
+	case kGoldBlock:
+		color_ = 0xFFFF00FF;
+		textureHandle_ = unBreakBlockTex_;
+		break;
+	case kFlag:
 		color_ = 0xFFFFFFFF;
-		textureHandle_ = blockTexture_;
+		textureHandle_ = unBreakBlockTex_;
 		break;
-	case WONDERBLOCK:
+	case kCollapse:
 		color_ = 0xFFFFFFFF;
-		textureHandle_ = wonderBlockTexture_;
+		textureHandle_ = coldBlockTex_;
 		break;
-	case FIXEDBLOCK:
+	case kEnemyBlock:
+		color_ = 0xFF0000FF;
+		textureHandle_ = coldBlockTex_;
+		break;
+	case kNeedleBlock:
+		color_ = 0xDDDDFFFF;
+		textureHandle_ = needleTex_;
+		break;
+	case kTNTBlock:
 		color_ = 0xFFFFFFFF;
-		textureHandle_ = fixedBlockTexture_;
-		break;
-	case BBA:
-		color_ = 0xff0000ff;
-		textureHandle_ = groundTexture_;
-		break;
-	case BBC:
-		color_ = 0xffff00ff;
-		textureHandle_ = groundTexture_;
-		break;
-	case BBD:
-		color_ = 0xff00ffff;
-		textureHandle_ = groundTexture_;
-		break;
-	case BBE:
-		color_ = 0x00ff00ff;
-		textureHandle_ = groundTexture_;
-		break;
-	case BBF:
-		color_ = 0x00ffffff;
-		textureHandle_ = groundTexture_;
-		break;
-	case BBG:
-		color_ = 0x0000ffff;
-		textureHandle_ = groundTexture_;
-		break;
-	case BBH:
-		color_ = 0xaaaaaaff;
-		textureHandle_ = groundTexture_;
+		textureHandle_ = TNTTex_;
 		break;
 	}
 
@@ -661,6 +775,79 @@ void Map::Load() {
 			fscanf_s(fp, "%x,", &map_[y][x]);
 		}
 	}
+
+	//一部の場所は固定ブロックに変更
+	for (uint32_t y = 0; y < kMaxHeight; y++) {
+
+		for (uint32_t x = 0; x < kMaxWidth; x++) {
+
+			//スタート地点付近作成
+			if (y < 5) {
+
+				map_[y][x] = 1;
+
+				//一部は空白に変更
+				if (y == 0) {
+
+					if ((x >= 10 && x <= 11) || (x >= 28 && x <= 29)) {
+						map_[y][x] = 0;
+					}
+
+				}
+				else {
+
+					if ((x >= 8 && x <= 13) || (x >= 26 && x <= 31)) {
+						map_[y][x] = 0;
+					}
+
+					if (y == 1 || y == 4) {
+
+						if ((x >= 17 && x <= 18) || (x >= 21 && x <= 22)) {
+							map_[y][x] = 0;
+						}
+
+					}
+					else {
+
+						if ((x >= 14 && x <= 18) || (x >= 21 && x <= 25)) {
+							map_[y][x] = 0;
+						}
+
+					}
+
+				}
+
+			}
+			else if (y == 5) {
+
+				if ((x >= 8 && x <= 13) || (x >= 26 && x <= 31)) {
+					map_[y][x] = 0;
+				}
+				else if (x <= 5 || (x >= 16 && x <= 23) || x >= 34) {
+					map_[y][x] = 1;
+				}
+
+			}
+			else if (y == 6) {
+
+				if ((x >= 9 && x <= 12) || (x >= 27 && x <= 30)) {
+					map_[y][x] = 1;
+				}
+
+			}
+			//一番下を破壊できないブロックにする
+			else if (y == kMaxHeight - 1) {
+				map_[y][x] = 1;
+			}
+			//左右を破壊できないブロックにする
+			if (x == 0 || x == kMaxWidth - 1) {
+				map_[y][x] = 1;
+			}
+
+		}
+
+	}
+
 
 	fclose(fp);
 
@@ -711,29 +898,34 @@ void Map::RangeFill() {
 	for (int y = top; y < bottom + 1; y++) {
 		for (int x = left; x < right + 1; x++) {
 
-			//redoのリストに要素があった場合、空にする
-			if (redoArrayList_.empty() != true) {
-				redoArrayList_.clear();
-			}
+			//書き換え不可の場合スキップ
+			if (isWrite_[y][x]) {
 
-			//redoのリスト(範囲塗りつぶし)に要素があった場合、空にする
-			if (redoFillArrayList_.empty() != true) {
-				redoFillArrayList_.clear();
-			}
-
-			//リストの最後尾に変更前の要素を追加
-			//マップのナンバーを格納
-			undoFillArrayList_.push_back(map_[y][x]);
-
-			//サイズが一定値を超えたら古い順に削除
-			if (undoFillArrayList_.size() > kMaxFillListSIze) {
-				for (int i = 0; i < 3; i++) {
-					undoFillArrayList_.pop_front();
+				//redoのリストに要素があった場合、空にする
+				if (redoArrayList_.empty() != true) {
+					redoArrayList_.clear();
 				}
-			}
 
-			//配列の要素を変更
-			map_[y][x] = blockNum_;
+				//redoのリスト(範囲塗りつぶし)に要素があった場合、空にする
+				if (redoFillArrayList_.empty() != true) {
+					redoFillArrayList_.clear();
+				}
+
+				//リストの最後尾に変更前の要素を追加
+				//マップのナンバーを格納
+				undoFillArrayList_.push_back(map_[y][x]);
+
+				//サイズが一定値を超えたら古い順に削除
+				if (undoFillArrayList_.size() > kMaxFillListSIze) {
+					for (int i = 0; i < 3; i++) {
+						undoFillArrayList_.pop_front();
+					}
+				}
+
+				//配列の要素を変更
+				map_[y][x] = blockNum_;
+
+			}
 
 		}
 	}
@@ -882,8 +1074,72 @@ void Map::Create() {
 			//ファイルの書き込む場所を最後尾に設定
 			fseek(fp, 0, SEEK_END);
 			std::stringstream stream;
+
+			//スタート地点付近作成
+			if (y < 5) {
+
+				map_[y][x] = 1;
+
+				//一部は空白に変更
+				if (y == 0) {
+
+					if ((x >= 10 && x <= 11) || (x >= 28 && x <= 29)) {
+						map_[y][x] = 0;
+					}
+
+				}
+				else {
+
+					if ((x >= 8 && x <= 13) || (x >= 26 && x <= 31)) {
+						map_[y][x] = 0;
+					}
+
+					if (y == 1 || y == 4) {
+
+						if ((x >= 17 && x <= 18) || (x >= 21 && x <= 22)) {
+							map_[y][x] = 0;
+						}
+
+					}
+					else {
+
+						if ((x >= 14 && x <= 18) || (x >= 21 && x <= 25)) {
+							map_[y][x] = 0;
+						}
+
+					}
+
+				}
+
+			}
+			else if (y == 5) {
+
+				if ((x >= 8 && x <= 13) || (x >= 26 && x <= 31)) {
+					map_[y][x] = 0;
+				}
+				else if (x <= 5 || (x >= 16 && x <= 23) || x >= 34) {
+					map_[y][x] = 1;
+				}
+
+			}
+			else if (y == 6) {
+
+				if ((x >= 9 && x <= 12) || (x >= 27 && x <= 30)) {
+					map_[y][x] = 1;
+				}
+
+			}
+			//一番下を破壊できないブロックにする
+			else if (y == kMaxHeight - 1) {
+				map_[y][x] = 1;
+			}
+			//左右を破壊できないブロックにする
+			if (x == 0 || x == kMaxWidth - 1) {
+				map_[y][x] = 1;
+			}
+
 			//数字を16進数に変換
-			stream << std::hex << 0;
+			stream << std::hex << map_[y][x];
 			std::string hexString = stream.str();
 			//カンマを追加
 			hexString += ",";
@@ -949,12 +1205,16 @@ void Map::Undo() {
 			//塗った時と逆の手順で塗りつぶしを行う
 			for (int y = bottom; y >= top; y--) {
 				for (int x = right; x >= left; x--) {
-					//タイプを格納
-					redoFillArrayList_.push_back(map_[y][x]);
-					//要素を代入
-					map_[y][x] = undoFillArrayList_.back();
-					//undo塗りつぶしリストの要素を削除
-					undoFillArrayList_.pop_back();
+
+					if (isWrite_[y][x]) {
+						//タイプを格納
+						redoFillArrayList_.push_back(map_[y][x]);
+						//要素を代入
+						map_[y][x] = undoFillArrayList_.back();
+						//undo塗りつぶしリストの要素を削除
+						undoFillArrayList_.pop_back();
+					}
+
 				}
 			}
 
@@ -1021,12 +1281,18 @@ void Map::Redo() {
 
 			for (int y = top; y < bottom + 1; y++) {
 				for (int x = left; x < right + 1; x++) {
-					//タイプを格納
-					undoFillArrayList_.push_back(map_[y][x]);
-					//要素を代入
-					map_[y][x] = redoFillArrayList_.back();
-					//undo塗りつぶしリストの要素を削除
-					redoFillArrayList_.pop_back();
+
+					if (isWrite_[y][x]) {
+
+						//タイプを格納
+						undoFillArrayList_.push_back(map_[y][x]);
+						//要素を代入
+						map_[y][x] = redoFillArrayList_.back();
+						//undo塗りつぶしリストの要素を削除
+						redoFillArrayList_.pop_back();
+
+					}
+
 				}
 			}
 
