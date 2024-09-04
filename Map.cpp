@@ -101,6 +101,8 @@ Map::Map()
 	undoFillArrayList_.clear();
 	redoFillArrayList_.clear();
 
+	LoadAllMaps();
+
 }
 
 Map::~Map()
@@ -270,6 +272,22 @@ void Map::Update() {
 				}
 				else {
 					MessageBox(nullptr, L"ファイル名を入力してください。", L"Map Editor - Load", 0);
+				}
+
+			}
+
+			ImGui::Separator();
+			ImGui::Text("Map List");
+
+			for (int32_t i = 0; i < mapNames_.size(); i++) {
+
+				if (ImGui::Button(mapNames_[i].c_str())) {
+
+					for (int32_t k = 0; k < mapNames_[i].size(); k++) {
+						fileName_[k] = mapNames_[i][k];
+					}
+
+					Load();
 				}
 
 			}
@@ -610,6 +628,7 @@ void Map::Edit() {
 			//ctrl + S でセーブ
 			if (Key::IsTrigger(DIK_S)) {
 				Save();
+				SaveJson();
 			}
 
 		}
@@ -681,7 +700,7 @@ void Map::Load() {
 
 	FILE* fp = NULL;
 
-	std::string str = "./Resources/Maps/";
+	std::string str = "Resources/Maps/";
 
 	str += fileName_;
 
@@ -814,7 +833,13 @@ void Map::Save() {
 
 	FILE* fp = NULL;
 
-	std::string str = "./Resources/Maps/";
+	std::string str = "Resources/Maps/";
+
+	//ディレクトリが無ければ作成する
+	std::filesystem::path dir(str);
+	if (!std::filesystem::exists(dir)) {
+		std::filesystem::create_directory(dir);
+	}
 
 	str += fileName_;
 
@@ -905,7 +930,7 @@ void Map::SaveJson() {
 
 	}
 
-	std::string str = "./Resources/Maps/";
+	std::string str = "SceneData/";
 
 	//ディレクトリが無ければ作成する
 	std::filesystem::path dir(str);
@@ -922,7 +947,7 @@ void Map::SaveJson() {
 
 	//ファイルオープン失敗したら表示
 	if (ofs.fail()) {
-		MessageBox(nullptr, L"ファイルを開くのに失敗しました。", L"Map Editor - Save", 0);
+		MessageBox(nullptr, L"ファイルを開くのに失敗しました。", L"Map SaveJson", 0);
 		return;
 	}
 
@@ -931,7 +956,7 @@ void Map::SaveJson() {
 	//ファイルを閉じる
 	ofs.close();
 
-	MessageBox(nullptr, L"セーブしました。", L"Map Editor - Save", 0);
+	MessageBox(nullptr, L"セーブしました。", L"Map SaveJson", 0);
 
 	isSave_ = true;
 
@@ -967,12 +992,21 @@ void Map::Close() {
 
 	isSave_ = true;
 
+	std::memset(fileName_, 0, sizeof(fileName_));
+
+	LoadAllMaps();
+
 }
 
 void Map::Create() {
 
-	//読み込むJSONファイルのフルパスを合成する
-	std::string filePath = "./Resources/Maps/";
+	std::string filePath = "Resources/Maps/";
+
+	//ディレクトリが無ければ作成する
+	std::filesystem::path dir(filePath);
+	if (!std::filesystem::exists(dir)) {
+		std::filesystem::create_directory(dir);
+	}
 
 	filePath += fileName_;
 
@@ -1032,6 +1066,29 @@ void Map::Create() {
 	fclose(fp);
 
 	isOpenFile_ = true;
+
+}
+
+void Map::LoadAllMaps() {
+
+	mapNames_.clear();
+
+	std::filesystem::recursive_directory_iterator itr("./Resources/Maps/");
+
+	//検索する拡張子
+	std::string extension = ".csv";
+
+	//マップ全検索
+	for (const auto& entry : itr) {
+
+		if (std::filesystem::is_regular_file(entry.path()) &&
+			entry.path().extension() == extension) {
+			std::string mapName = entry.path().stem().string();
+			//最後尾に追加
+			mapNames_.push_back(mapName);
+		}
+
+	}
 
 }
 

@@ -95,6 +95,9 @@ private:
 	//ファイルを閉じる
 	void Close();
 
+	//全マップ検索
+	void LoadAllMaps();
+
 	//テキスト説明
 	std::array<std::string, kMaxBlock> blockNames_ = { "None", "Block1", "Block2", "Block3", "Block4", "Block5", "Block6", "Block7", 
 		"Block8", "Block9", "Block10" };
@@ -217,6 +220,7 @@ private:
 	int block10Tex_;
 
 	std::vector<std::string> textureFileNames_;
+	std::vector<std::string> mapNames_;
 
 	//現在の機能
 	TOOL tool_ = BRUSH;
