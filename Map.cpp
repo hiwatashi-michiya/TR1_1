@@ -69,26 +69,26 @@ Map::Map()
 	}
 
 	textureFileNames_.push_back("./Resources/Textures/Blocks/block0.png");
-	textureFileNames_.push_back("./Resources/Textures/Blocks/block1.png");
-	textureFileNames_.push_back("./Resources/Textures/Blocks/block2.png");
-	textureFileNames_.push_back("./Resources/Textures/Blocks/block3.png");
-	textureFileNames_.push_back("./Resources/Textures/Blocks/block4.png");
-	textureFileNames_.push_back("./Resources/Textures/Blocks/block5.png");
-	textureFileNames_.push_back("./Resources/Textures/Blocks/block6.png");
+	textureFileNames_.push_back("./Resources/Textures/gimmick/cloud_shadow2.png");
+	textureFileNames_.push_back("./Resources/Textures/player/player_stop.png");
+	textureFileNames_.push_back("./Resources/Textures/gimmick/key_light.png");
+	textureFileNames_.push_back("./Resources/Textures/gimmick/goal_close_doing.png");
+	textureFileNames_.push_back("./Resources/Textures/gimmick/coin.png");
+	textureFileNames_.push_back("./Resources/Textures/enemy/enemy_eye_down.png");
 	textureFileNames_.push_back("./Resources/Textures/Blocks/block7.png");
 	textureFileNames_.push_back("./Resources/Textures/Blocks/block8.png");
 	textureFileNames_.push_back("./Resources/Textures/Blocks/block9.png");
 	textureFileNames_.push_back("./Resources/Textures/Blocks/block10.png");
 
-	textureHandle_ = Novice::LoadTexture("./Resources/Textures/Blocks/block1.png");
+	textureHandle_ = Novice::LoadTexture("./Resources/Textures/gimmick/cloud_shadow2.png");
 	frameTexture_ = Novice::LoadTexture("./Resources/Textures/frameborder.png");
-	bgTexture_ = Novice::LoadTexture("./Resources/Textures/backGround/background.png");
-	block1Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block1.png");
-	block2Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block2.png");
-	block3Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block3.png");
-	block4Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block4.png");
-	block5Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block5.png");
-	block6Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block6.png");
+	bgTexture_ = Novice::LoadTexture("./Resources/Textures/backGround/backGround_back.png");
+	block1Tex_ = Novice::LoadTexture("./Resources/Textures/gimmick/cloud_shadow2.png");
+	block2Tex_ = Novice::LoadTexture("./Resources/Textures/player/player_stop.png");
+	block3Tex_ = Novice::LoadTexture("./Resources/Textures/gimmick/key_light.png");
+	block4Tex_ = Novice::LoadTexture("./Resources/Textures/gimmick/goal_close_doing.png");
+	block5Tex_ = Novice::LoadTexture("./Resources/Textures/gimmick/coin.png");
+	block6Tex_ = Novice::LoadTexture("./Resources/Textures/enemy/enemy_eye_down.png");
 	block7Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block7.png");
 	block8Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block8.png");
 	block9Tex_ = Novice::LoadTexture("./Resources/Textures/Blocks/block9.png");
@@ -112,6 +112,22 @@ Map::~Map()
 void Map::Update() {
 
 	preBlockNum_ = blockNum_;
+
+	for (int32_t i = 0; i < kMaxBlock; i++) {
+		blockCounts_[i] = 0;
+	}
+
+	for (int32_t y = 0; y < kMaxHeight; y++) {
+
+		for (int32_t x = 0; x < kMaxWidth; x++) {
+
+			if (map_[y][x] != kNone) {
+				blockCounts_[map_[y][x]]++;
+			}
+
+		}
+
+	}
 
 	//コントロールを押していない時
 	if (!Key::IsPress(DIK_LCONTROL) && isOpenFile_) {
@@ -247,6 +263,9 @@ void Map::Update() {
 				Redo();
 			}
 
+			ImGui::Text(" cloud : %d\n player : %d\n key : %d\n goal : %d\n coin : %d\n enemy : %d",
+				blockCounts_[kCloud], blockCounts_[kPlayerPoint], blockCounts_[kKey], blockCounts_[kGoal], blockCounts_[kCollection], blockCounts_[kEye]);
+
 		}
 		else {
 
@@ -294,12 +313,18 @@ void Map::Update() {
 
 		}
 
-		ImGui::Text("Scroll X : %d", scrollX_);
-		ImGui::Text("Scroll Y : %d", scrollY_);
+		/*ImGui::Text("Scroll X : %d", scrollX_);
+		ImGui::Text("Scroll Y : %d", scrollY_);*/
 
 		ImGui::End();
 
 	}
+
+	ImGui::Begin("Manual");
+	ImGui::Text("wasd : scroll");
+	ImGui::Text("left or right arrow : change block");
+	ImGui::Text(" ctrl + s : save \n ctrl + z : undo \n ctrl + y : redo ");
+	ImGui::End();
 
 	Novice::GetMousePosition(&mouseX_, &mouseY_);
 
@@ -315,6 +340,7 @@ void Map::Draw() {
 	Novice::DrawQuad(0, 0, 1280, 0, 0, 720, 1280, 720, 0, 0, 1280, 720, bgTexture_, 0xFFFFFFFF);
 
 	for (int y = 0; y < kMaxHeight; y++) {
+
 		for (int x = 0; x < kMaxWidth; x++) {
 
 			SetState(map_[y][x]);
@@ -331,7 +357,7 @@ void Map::Draw() {
 						x * kMapChipSize + kMapChipSize - scrollX_, y * kMapChipSize - scrollY_,
 						x * kMapChipSize - scrollX_, y * kMapChipSize + kMapChipSize - scrollY_,
 						x * kMapChipSize + kMapChipSize - scrollX_, y * kMapChipSize + kMapChipSize - scrollY_,
-						0, 0, 32, 32, textureHandle_, color_);
+						0, 0, 512, 512, textureHandle_, color_);
 				}
 
 			}
@@ -360,7 +386,7 @@ void Map::Draw() {
 		if (blockNum_ != 0) {
 			Novice::DrawQuad(mouseX_ - 16, mouseY_ - 16, mouseX_ + 16, mouseY_ - 16,
 				mouseX_ - 16, mouseY_ + 16, mouseX_ + 16, mouseY_ + 16,
-				0, 0, 32, 32, textureHandle_, color_);
+				0, 0, 512, 512, textureHandle_, color_);
 		}
 
 		Novice::ScreenPrintf(0, 0, "undoArrayList size : %d", undoArrayList_.size());
@@ -368,6 +394,9 @@ void Map::Draw() {
 		Novice::ScreenPrintf(0, 40, "blockNumber : %d", blockNum_);
 
 		Novice::DrawBox(selectX_ * kMapChipSize - scrollX_, selectY_ * kMapChipSize - scrollY_, kMapChipSize, kMapChipSize, 0.0f, 0xAA0000FF, kFillModeWireFrame);
+
+		Novice::DrawLine(0, 32 * 4 + 16, 1280, 32 * 4 + 16, 0xAA0000FF);
+		Novice::DrawLine(0, 32 * 18, 1280, 32 * 18, 0xAA0000FF);
 
 		if (isRangeFill_ && tool_ == RANGEFILL) {
 			Novice::DrawBox(drawX_ - drawWidthScrollX_, drawY_ - drawHeightScrollY_,
@@ -409,7 +438,7 @@ void Map::Edit() {
 		if (!Key::IsPress(DIK_LCONTROL)) {
 
 			//ブロック切り替え
-			if (Key::IsTrigger(DIK_E)) {
+			if (Key::IsTrigger(DIK_E) || Key::IsTrigger(DIK_RIGHT)) {
 
 				if (blockNum_ < BlockType::kMaxBlock - 1) {
 					blockNum_++;
@@ -417,7 +446,7 @@ void Map::Edit() {
 
 			}
 
-			if (Key::IsTrigger(DIK_Q)) {
+			if (Key::IsTrigger(DIK_Q) || Key::IsTrigger(DIK_LEFT)) {
 
 				if (blockNum_ > 0) {
 					blockNum_--;
@@ -439,8 +468,7 @@ void Map::Edit() {
 		}
 
 		//ImGuiウィンドウ内で触っていたらマップの塗りつぶしをしないようにする
-		if (Novice::IsTriggerMouse(0) && (ImGuiPosX_ <= mouseX_ && mouseX_ <= ImGuiPosX_ + ImGuiWidth_ &&
-			ImGuiPosY_ <= mouseY_ && mouseY_ <= ImGuiPosY_ + ImGuiHeight_)) {
+		if (Novice::IsTriggerMouse(0) && (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsAnyItemHovered())) {
 			isTouchGui_ = true;
 		}
 
@@ -449,8 +477,7 @@ void Map::Edit() {
 		}
 
 		//ImGuiウィンドウの範囲内を反応させない
-		if (!(ImGuiPosX_ <= mouseX_ && mouseX_ <= ImGuiPosX_ + ImGuiWidth_ &&
-			ImGuiPosY_ <= mouseY_ && mouseY_ <= ImGuiPosY_ + ImGuiHeight_) && !isTouchGui_) {
+		if (!isTouchGui_) {
 
 			//ボタンを押したらセレクト位置を決める
 			if (Novice::IsPressMouse(0) || Novice::IsPressMouse(1)) {
@@ -651,45 +678,29 @@ void Map::SetState(int mapNum) {
 	default:
 		color_ = 0x00000000;
 		break;
-	case kBlock1:
+	case kCloud:
 		color_ = 0xFFFFFFFF;
 		textureHandle_ = block1Tex_;
 		break;
-	case kBlock2:
+	case kPlayerPoint:
 		color_ = 0xFFFFFFFF;
 		textureHandle_ = block2Tex_;
 		break;
-	case kBlock3:
+	case kKey:
 		color_ = 0xFFFFFFFF;
 		textureHandle_ = block3Tex_;
 		break;
-	case kBlock4:
+	case kGoal:
 		color_ = 0xFFFFFFFF;
 		textureHandle_ = block4Tex_;
 		break;
-	case kBlock5:
+	case kCollection:
 		color_ = 0xFFFFFFFF;
 		textureHandle_ = block5Tex_;
 		break;
-	case kBlock6:
+	case kEye:
 		color_ = 0xFFFFFFFF;
 		textureHandle_ = block6Tex_;
-		break;
-	case kBlock7:
-		color_ = 0xFFFFFFFF;
-		textureHandle_ = block7Tex_;
-		break;
-	case kBlock8:
-		color_ = 0xFFFFFFFF;
-		textureHandle_ = block8Tex_;
-		break;
-	case kBlock9:
-		color_ = 0xFFFFFFFF;
-		textureHandle_ = block9Tex_;
-		break;
-	case kBlock10:
-		color_ = 0xFFFFFFFF;
-		textureHandle_ = block10Tex_;
 		break;
 	}
 
@@ -721,7 +732,13 @@ void Map::Load() {
 
 	for (int y = 0; y < kMaxHeight; y++) {
 		for (int x = 0; x < kMaxWidth; x++) {
+			
 			fscanf_s(fp, "%x,", &map_[y][x]);
+
+			if (map_[y][x] >= kMaxBlock) {
+				map_[y][x] = 1;
+			}
+
 		}
 	}
 
@@ -890,39 +907,599 @@ void Map::Save() {
 
 void Map::SaveJson() {
 
+	//csvのパス
+	std::string csvStr = "Resources/Maps/";
+	csvStr += fileName_;
+	csvStr += ".csv";
+
+
 	nlohmann::json root;
 
 	root = nlohmann::json::object();
 
 	root["objects"] = nlohmann::json::array();
 
+	//カメラの追加
+	{
+
+		//カメラ2Dコンポーネント追加
+		root["objects"].push_back(nlohmann::json::object());
+		root["objects"].back()["Comps"] = nlohmann::json::array();
+
+		root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+		root["objects"].back()["Comps"].back()["CompName"] = "class CameraComp";
+
+		root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+		root["objects"].back()["Comps"].back()["CompName"] = "class TransformComp";
+		root["objects"].back()["Comps"].back()["scale"] =
+			nlohmann::json::array({ 0.6f, 0.6f, 1.0f });
+		root["objects"].back()["Comps"].back()["rotate"] =
+			nlohmann::json::array({ 0.0f, 0.0f, 0.0f, 1.0f });
+		root["objects"].back()["Comps"].back()["translate"] =
+			nlohmann::json::array({ 624.0f, -344.0f, -10.0f });
+
+		root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+		root["objects"].back()["Comps"].back()["CompName"] = "class Camera2DComp";
+		root["objects"].back()["Comps"].back()["width"] = 1280;
+		root["objects"].back()["Comps"].back()["height"] = 720;
+		root["objects"].back()["Comps"].back()["farClip"] = 1000.0f;
+		root["objects"].back()["Comps"].back()["nearClip"] = 0.1f;
+
+		root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+		root["objects"].back()["Comps"].back()["CompName"] = "class FollowCamera2DComp";
+
+		root["objects"].back()["type"] = "Object";
+
+	}
+
+	root["objects"].push_back(nlohmann::json::object());
+	root["objects"].back()["Comps"] = nlohmann::json::array();
+
+	//スプライトレンダーデータコンポーネント追加
+	root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+	root["objects"].back()["Comps"].back()["BlendType"] = "kNormal";
+	root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderDataComp";
+	root["objects"].back()["Comps"].back()["color"] = nlohmann::json::array({ 1.0f,1.0f,1.0f,1.0f });
+	root["objects"].back()["Comps"].back()["fileName"] = "./Resources/Textures/backGround/backGround_back.png";
+	root["objects"].back()["Comps"].back()["offsetType"] = "kMiddle";
+
+	//スプライトレンダーコンポーネント追加
+	root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+	root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderComp";
+
+	//トランスフォームコンポーネント追加
+	root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+	root["objects"].back()["Comps"].back()["CompName"] = "class TransformComp";
+	root["objects"].back()["Comps"].back()["scale"] =
+		nlohmann::json::array({ 768.0f,432.0f,16.0f });
+	root["objects"].back()["Comps"].back()["rotate"] =
+		nlohmann::json::array({ 0.0f, 0.0f, 0.0f, 1.0f });
+	root["objects"].back()["Comps"].back()["translate"] =
+		nlohmann::json::array({ 640.0f - 16.0f, -360.0f + 16.0f, 100.0f });
+
+	//バックグラウンドコンポーネント追加
+	root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+	root["objects"].back()["Comps"].back()["CompName"] = "class BackGroundComp";
+
+	root["scene"] = fileName_;
+
 	for (int32_t y = 0; y < kMaxHeight; y++) {
 
 		for (int32_t x = 0; x < kMaxWidth; x++) {
 
-			if (map_[y][x] != 0) {
+			//2Dコンポーネント追加
+			if (map_[y][x] == kCloud) {
 
 				root["objects"].push_back(nlohmann::json::object());
 				root["objects"].back()["Comps"] = nlohmann::json::array();
 
+				//スプライトレンダーデータコンポーネント追加
 				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
-				root["objects"].back()["Comps"].back()["BlendType"] = "kNone";
+				root["objects"].back()["Comps"].back()["BlendType"] = "kNormal";
 				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderDataComp";
 				root["objects"].back()["Comps"].back()["color"] = nlohmann::json::array({ 1.0f,1.0f,1.0f,1.0f });
 				root["objects"].back()["Comps"].back()["fileName"] = textureFileNames_[map_[y][x]];
 				root["objects"].back()["Comps"].back()["offsetType"] = "kMiddle";
 
+				//スプライトレンダーコンポーネント追加
 				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
 				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderComp";
 
+				//トランスフォームコンポーネント追加
 				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
 				root["objects"].back()["Comps"].back()["CompName"] = "class TransformComp";
 				root["objects"].back()["Comps"].back()["scale"] =
-					nlohmann::json::array({ 1.0f, 1.0f, 1.0f });
+					nlohmann::json::array({ float(kMapChipSize), float(kMapChipSize),  float(kMapChipSize) });
 				root["objects"].back()["Comps"].back()["rotate"] =
 					nlohmann::json::array({ 0.0f, 0.0f, 0.0f, 1.0f });
 				root["objects"].back()["Comps"].back()["translate"] =
-					nlohmann::json::array({ float(x * kMapChipSize), -float(y * kMapChipSize), 0.0f });
+					nlohmann::json::array({ float(x * kMapChipSize), -float(y * kMapChipSize), 5.0f });
+				
+				//雲コンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class CloudComp";
+
+				//OBBコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class ObbComp";
+				root["objects"].back()["Comps"].back()["center"] = nlohmann::json::array({ 0.0f,0.0f,0.0f });
+				root["objects"].back()["Comps"].back()["collisiionTags"] = nlohmann::json::array();
+				root["objects"].back()["Comps"].back()["scale"] = nlohmann::json::array({ 32.5f,32.5f,32.5f });
+				root["objects"].back()["Comps"].back()["isScaleEffect"] = false;
+
+				//OBB押し出しコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class ObbPushComp";
+				root["objects"].back()["Comps"].back()["pushTags"] = nlohmann::json::array({});
+
+				//AABB2Dコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class Aabb2DComp";
+				root["objects"].back()["Comps"].back()["scale"] = nlohmann::json::array({ 32.0f,32.0f,32.0f });
+				root["objects"].back()["Comps"].back()["isScaleEffect"] = false;
+
+				//フラグコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class FlagComp";
+
+				//マスコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class Mass2DComp";
+				root["objects"].back()["Comps"].back()["mass"] = nlohmann::json::array({ x,y });
+				root["objects"].back()["Comps"].back()["offset"] = nlohmann::json::array({ 0.0f,0.0f });
+				root["objects"].back()["Comps"].back()["size"] = 32;
+
+				//クラウドレンダーコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class CloudRenderComp";
+				root["objects"].back()["Comps"].back()["scaleMax"] = 1.2f;
+				root["objects"].back()["Comps"].back()["startTime_Max"] = 1.0f;
+				root["objects"].back()["Comps"].back()["startTime_Min"] = 0.0f;
+
+				//イージングコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class EaseingComp";
+				root["objects"].back()["Comps"].back()["isLoop"] = true;
+				root["objects"].back()["Comps"].back()["spdT"] = 2.0f;
+				root["objects"].back()["Comps"].back()["type"] = "InOutSine";
+
+				//インスタンスタイムコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class InstanceTimeComp";
+
+				root["objects"].back()["type"] = "Object";
+
+			}
+			else if (map_[y][x] == kPlayerPoint) {
+
+				root["objects"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"] = nlohmann::json::array();
+
+				//プレイヤーコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class PlayerComp";
+
+				//スプライトレンダーデータコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["BlendType"] = "kNormal";
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderDataComp";
+				root["objects"].back()["Comps"].back()["color"] = nlohmann::json::array({ 1.0f,1.0f,1.0f,1.0f });
+				root["objects"].back()["Comps"].back()["fileName"] = textureFileNames_[map_[y][x]];
+				root["objects"].back()["Comps"].back()["offsetType"] = "kMiddle";
+
+				//スプライトレンダーコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderComp";
+
+				//トランスフォームコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class TransformComp";
+				root["objects"].back()["Comps"].back()["scale"] =
+					nlohmann::json::array({ float(kMapChipSize) * 1.5f, float(kMapChipSize) * 1.5f,  float(kMapChipSize) * 1.5f });
+				root["objects"].back()["Comps"].back()["rotate"] =
+					nlohmann::json::array({ 0.0f, 0.0f, 0.0f, 1.0f });
+				root["objects"].back()["Comps"].back()["translate"] =
+					nlohmann::json::array({ float(x * kMapChipSize), -float(y * kMapChipSize), 1.0f });
+
+				//落下コンポーネント追加追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class FallComp";
+				root["objects"].back()["Comps"].back()["gravity"] = -9.8f;
+
+				//OBBコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class ObbComp";
+				root["objects"].back()["Comps"].back()["center"] = nlohmann::json::array({ 0.0f,0.0f,0.0f });
+				root["objects"].back()["Comps"].back()["collisiionTags"] = nlohmann::json::array();
+				root["objects"].back()["Comps"].back()["scale"] = nlohmann::json::array({ 0.5f,0.5f,0.5f });
+
+				//OBB押し出しコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class ObbPushComp";
+				root["objects"].back()["Comps"].back()["pushTags"] = nlohmann::json::array();
+
+				//AABB2Dコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class Aabb2DComp";
+				root["objects"].back()["Comps"].back()["scale"] = nlohmann::json::array({ 24.0f,24.0f,24.0f });
+				root["objects"].back()["Comps"].back()["isScaleEffect"] = false;
+
+				//インプットコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class InputMoveComp";
+				root["objects"].back()["Comps"].back()["speed"] = 1.0f;
+
+				//フラグコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class FlagComp";
+
+				//方向コンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class Direction2DComp";
+
+				//csvDataのコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class CsvDataComp";
+				root["objects"].back()["Comps"].back()["fileName"] = csvStr;
+
+				//雲食べのコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class EatCloudComp";
+
+				//雲吐きのコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class RemoveCloudComp";
+
+				//カウントコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class CountComp";
+
+				//マスコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class Mass2DComp";
+				root["objects"].back()["Comps"].back()["mass"] = nlohmann::json::array({ x,y });
+				root["objects"].back()["Comps"].back()["offset"] = nlohmann::json::array({ 16.0f,16.0f });
+				root["objects"].back()["Comps"].back()["size"] = 32;
+
+				//アニメーションコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteAnimatorComp";
+				root["objects"].back()["Comps"].back()["startPos"] = nlohmann::json::array({ 0.0f,0.0f,0.0f });
+				root["objects"].back()["Comps"].back()["isLoop"] = true;
+				root["objects"].back()["Comps"].back()["animationNumber"] = 6;
+				root["objects"].back()["Comps"].back()["duration"] = 0.1666f;
+
+				//テクスチャハンドルコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class TextureHandlesComp";
+				root["objects"].back()["Comps"].back()["fileNames"] = nlohmann::json::array({
+					"./Resources/Textures/player/player_stop.png",
+					"./Resources/Textures/player/player_walk.png",
+					"./Resources/Textures/player/player_eat.png",
+					"./Resources/Textures/player/player_out.png",
+					"./Resources/Textures/player/player_stop_transparent.png",
+					"./Resources/Textures/player/player_walk_transparent.png",
+					"./Resources/Textures/player/player_eat_transparent.png",
+					"./Resources/Textures/player/player_out_transparent.png"
+					});
+
+			}
+			else if (map_[y][x] == kKey) {
+
+				root["objects"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"] = nlohmann::json::array();
+
+				//スプライトレンダーデータコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["BlendType"] = "kNormal";
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderDataComp";
+				root["objects"].back()["Comps"].back()["color"] = nlohmann::json::array({ 1.0f,1.0f,1.0f,1.0f });
+				root["objects"].back()["Comps"].back()["fileName"] = textureFileNames_[map_[y][x]];
+				root["objects"].back()["Comps"].back()["offsetType"] = "kMiddle";
+
+				//スプライトレンダーコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderComp";
+
+				//トランスフォームコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class TransformComp";
+				root["objects"].back()["Comps"].back()["scale"] =
+					nlohmann::json::array({ float(kMapChipSize) * 0.8f, float(kMapChipSize) * 0.8f,  float(kMapChipSize) * 0.8f });
+				root["objects"].back()["Comps"].back()["rotate"] =
+					nlohmann::json::array({ 0.0f, 0.0f, 0.0f, 1.0f });
+				root["objects"].back()["Comps"].back()["translate"] =
+					nlohmann::json::array({ float(x * kMapChipSize), -float(y * kMapChipSize), 4.0f });
+
+				//鍵コンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class KeyComp";
+
+				//マスコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class Mass2DComp";
+				root["objects"].back()["Comps"].back()["mass"] = nlohmann::json::array({ x,y });
+				root["objects"].back()["Comps"].back()["offset"] = nlohmann::json::array({ 0.0f,0.0f });
+				root["objects"].back()["Comps"].back()["size"] = 32;
+
+				//AABB2Dコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class Aabb2DComp";
+				root["objects"].back()["Comps"].back()["scale"] = nlohmann::json::array({ 0.8f,0.8f,0.8f });
+
+				//アニメーションコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteAnimatorComp";
+				root["objects"].back()["Comps"].back()["startPos"] = nlohmann::json::array({ 0.0f,0.0f,0.0f });
+				root["objects"].back()["Comps"].back()["isLoop"] = true;
+				root["objects"].back()["Comps"].back()["animationNumber"] = 6;
+				root["objects"].back()["Comps"].back()["duration"] = 0.1666f;
+
+				root["objects"].back()["type"] = "Object";
+
+			}
+			else if (map_[y][x] == kGoal) {
+
+				root["objects"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"] = nlohmann::json::array();
+
+				//スプライトレンダーデータコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["BlendType"] = "kNormal";
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderDataComp";
+				root["objects"].back()["Comps"].back()["color"] = nlohmann::json::array({ 1.0f,1.0f,1.0f,1.0f });
+				root["objects"].back()["Comps"].back()["fileName"] = textureFileNames_[map_[y][x]];
+				root["objects"].back()["Comps"].back()["offsetType"] = "kMiddle";
+
+				//スプライトレンダーコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderComp";
+
+				//トランスフォームコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class TransformComp";
+				root["objects"].back()["Comps"].back()["scale"] =
+					nlohmann::json::array({ 64.0f,45.33f,32.0f });
+				root["objects"].back()["Comps"].back()["rotate"] =
+					nlohmann::json::array({ 0.0f, 0.0f, 0.0f, 1.0f });
+				root["objects"].back()["Comps"].back()["translate"] =
+					nlohmann::json::array({ float(x * kMapChipSize), -float(y * kMapChipSize), 2.0f });
+
+				//ゴールコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class GoalComp";
+
+				//マスコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class Mass2DComp";
+				root["objects"].back()["Comps"].back()["mass"] = nlohmann::json::array({ x,y });
+				root["objects"].back()["Comps"].back()["offset"] = nlohmann::json::array({ 0.0f,0.0f });
+				root["objects"].back()["Comps"].back()["size"] = 32;
+
+				//AABB2Dコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class Aabb2DComp";
+				root["objects"].back()["Comps"].back()["scale"] = nlohmann::json::array({ 0.35f,0.55f,1.0f });
+
+				//アニメーションコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteAnimatorComp";
+				root["objects"].back()["Comps"].back()["startPos"] = nlohmann::json::array({ 0.0f,0.0f,0.0f });
+				root["objects"].back()["Comps"].back()["isLoop"] = true;
+				root["objects"].back()["Comps"].back()["animationNumber"] = 8;
+				root["objects"].back()["Comps"].back()["duration"] = 0.125f;
+
+				//テクスチャハンドルコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class TextureHandlesComp";
+				root["objects"].back()["Comps"].back()["fileNames"] = nlohmann::json::array({
+					"./Resources/Textures/gimmick/goal_open_doing.png",
+					"./Resources/Textures/gimmick/goal_close_doing.png",
+					"./Resources/Textures/gimmick/goal_open_anime.png",
+					"./Resources/Textures/gimmick/goal_close_anime.png"
+					});
+
+				root["objects"].back()["type"] = "Object";
+
+			}
+			else if (map_[y][x] == kCollection) {
+
+				root["objects"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"] = nlohmann::json::array();
+
+				//スプライトレンダーデータコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["BlendType"] = "kNormal";
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderDataComp";
+				root["objects"].back()["Comps"].back()["color"] = nlohmann::json::array({ 1.0f,1.0f,1.0f,1.0f });
+				root["objects"].back()["Comps"].back()["fileName"] = textureFileNames_[map_[y][x]];
+				root["objects"].back()["Comps"].back()["offsetType"] = "kMiddle";
+
+				//スプライトレンダーコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderComp";
+
+				//トランスフォームコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class TransformComp";
+				root["objects"].back()["Comps"].back()["scale"] =
+					nlohmann::json::array({ float(kMapChipSize), float(kMapChipSize),  float(kMapChipSize) });
+				root["objects"].back()["Comps"].back()["rotate"] =
+					nlohmann::json::array({ 0.0f, 0.0f, 0.0f, 1.0f });
+				root["objects"].back()["Comps"].back()["translate"] =
+					nlohmann::json::array({ float(x * kMapChipSize), -float(y * kMapChipSize), 4.0f });
+
+				//収集アイテムコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class CollectionComp";
+
+				//マスコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class Mass2DComp";
+				root["objects"].back()["Comps"].back()["mass"] = nlohmann::json::array({ x,y });
+				root["objects"].back()["Comps"].back()["offset"] = nlohmann::json::array({ 0.0f,0.0f });
+				root["objects"].back()["Comps"].back()["size"] = 32;
+
+				//AABB2Dコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class Aabb2DComp";
+				root["objects"].back()["Comps"].back()["scale"] = nlohmann::json::array({ 0.8f,0.8f,0.8f });
+
+				//アニメーションコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteAnimatorComp";
+				root["objects"].back()["Comps"].back()["startPos"] = nlohmann::json::array({ 0.0f,0.0f,0.0f });
+				root["objects"].back()["Comps"].back()["isLoop"] = true;
+				root["objects"].back()["Comps"].back()["animationNumber"] = 7;
+				root["objects"].back()["Comps"].back()["duration"] = 0.142857f;
+
+				root["objects"].back()["type"] = "Object";
+
+			}
+			else if (map_[y][x] == kEye) {
+
+				root["objects"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"] = nlohmann::json::array();
+
+				//敵コンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class EyeComp";
+
+				//トランスフォームコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class TransformComp";
+				root["objects"].back()["Comps"].back()["scale"] =
+					nlohmann::json::array({ 100.0f,100.0f,100.0f });
+				root["objects"].back()["Comps"].back()["rotate"] =
+					nlohmann::json::array({ 0.0f, 0.0f, 0.0f, 1.0f });
+				root["objects"].back()["Comps"].back()["translate"] =
+					nlohmann::json::array({ float(x * kMapChipSize), -float(y * kMapChipSize), 10.0f });
+
+				//敵ステータスコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class EyeStateComp";
+				root["objects"].back()["Comps"].back()["aimFixedTime"] = 1.0f;
+				root["objects"].back()["Comps"].back()["aimeTime"] = 1.5f;
+				root["objects"].back()["Comps"].back()["fireTime"] = 0.5f;
+
+				//線当たり判定コンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class LineCollisionComp";
+				root["objects"].back()["Comps"].back()["CollisionTags"] = nlohmann::json::array({ "class CloudComp" });
+
+				//線コンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class LineComp";
+				root["objects"].back()["Comps"].back()["end"] = nlohmann::json::array({ 0.0f,0.0f,0.0f });
+				root["objects"].back()["Comps"].back()["start"] = nlohmann::json::array({ 0.0f,0.0f,0.0f });
+
+				//線描画データコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class LineRenderDataComp";
+				root["objects"].back()["Comps"].back()["color"] = nlohmann::json::array({ 1.0f,0.0f,0.0f,1.0f });
+				root["objects"].back()["Comps"].back()["isDepth"] = true;
+
+				//イージングコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class EaseingComp";
+				root["objects"].back()["Comps"].back()["isLoop"] = false;
+				root["objects"].back()["Comps"].back()["spdT"] = 0.5f;
+				root["objects"].back()["Comps"].back()["type"] = "InOutSine";
+
+				//子のコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class ChildrenObjectComp";
+				root["objects"].back()["Comps"].back()["Children"] = nlohmann::json::array();
+				root["objects"].back()["Comps"].back()["Children"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["Children"].back()["Comps"] = nlohmann::json::array();
+
+				{
+					//スプライトレンダーデータコンポーネント追加
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].push_back(nlohmann::json::object());
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["BlendType"] = "kNormal";
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["CompName"] = "class SpriteRenderDataComp";
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["color"] = nlohmann::json::array({ 1.0f,1.0f,1.0f,1.0f });
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["fileName"] = "./Resources/Textures/enemy/enemy_eye_up.png";
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["offsetType"] = "kMiddle";
+
+					//スプライトレンダーコンポーネント追加
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].push_back(nlohmann::json::object());
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["CompName"] = "class SpriteRenderComp";
+
+					//トランスフォームコンポーネント追加
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].push_back(nlohmann::json::object());
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["CompName"] = "class TransformComp";
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["scale"] =
+						nlohmann::json::array({ 1.0f, 1.0f, 1.0f });
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["rotate"] =
+						nlohmann::json::array({ 0.0f, 0.0f, 0.0f, 1.0f });
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["translate"] =
+						nlohmann::json::array({ 0.0f,0.0f,-0.1f });
+
+					root["objects"].back()["Comps"].back()["Children"].back()["type"] = "Object";
+
+				}
+
+				//子のコンポーネント追加
+				root["objects"].back()["Comps"].back()["Children"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["Children"].back()["Comps"] = nlohmann::json::array();
+
+				//ビーム
+				{
+
+					//スプライトレンダーデータコンポーネント追加
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].push_back(nlohmann::json::object());
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["BlendType"] = "kNormal";
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["CompName"] = "class SpriteRenderDataComp";
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["color"] = nlohmann::json::array({ 1.0f,0.0f,0.0f,1.0f });
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["fileName"] = "./Resources/EngineResources/white2x2.png";
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["offsetType"] = "kMiddle";
+
+					//スプライトレンダーコンポーネント追加
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].push_back(nlohmann::json::object());
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["CompName"] = "class SpriteRenderComp";
+
+					//トランスフォームコンポーネント追加
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].push_back(nlohmann::json::object());
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["CompName"] = "class TransformComp";
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["scale"] =
+						nlohmann::json::array({ 0.0f, 10.0f, 10.0f });
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["rotate"] =
+						nlohmann::json::array({ 0.0f, 0.0f, 0.0f, 1.0f });
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["translate"] =
+						nlohmann::json::array({ 0.0f,0.0f,0.0f });
+
+					//線のコンバートトランスフォームコンポーネント追加
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].push_back(nlohmann::json::object());
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["CompName"] = "class LineConvertTransformComp";
+
+					//トランスフォームコンポーネント追加
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].push_back(nlohmann::json::object());
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["CompName"] = "class LineComp";
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["end"] = nlohmann::json::array({ 0.0f,0.0f,0.0f });
+					root["objects"].back()["Comps"].back()["Children"].back()["Comps"].back()["start"] = nlohmann::json::array({ 0.0f,0.0f,0.0f });
+
+					root["objects"].back()["Comps"].back()["Children"].back()["type"] = "Object";
+
+				}
+
+				//線描画コンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class LineRenderComp";
+
+				//スプライトレンダーコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderComp";
+
+				//スプライトレンダーデータコンポーネント追加
+				root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+				root["objects"].back()["Comps"].back()["BlendType"] = "kNormal";
+				root["objects"].back()["Comps"].back()["CompName"] = "class SpriteRenderDataComp";
+				root["objects"].back()["Comps"].back()["color"] = nlohmann::json::array({ 1.0f,1.0f,1.0f,1.0f });
+				root["objects"].back()["Comps"].back()["fileName"] = "./Resources/Textures/enemy/enemy_eye_down.png";
+				root["objects"].back()["Comps"].back()["offsetType"] = "kMiddle";
+
+				root["objects"].back()["type"] = "Object";
 
 			}
 
@@ -970,6 +1547,7 @@ void Map::Close() {
 		if (MessageBox(nullptr, L"ファイルが保存されていません。保存しますか？", L"Map - Close", MB_OKCANCEL) == IDOK) {
 
 			Save();
+			SaveJson();
 
 		}
 

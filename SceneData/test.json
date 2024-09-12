@@ -3,7 +3,44 @@
         {
             "Comps": [
                 {
-                    "BlendType": "kNone",
+                    "CompName": "class CameraComp"
+                },
+                {
+                    "CompName": "class TransformComp",
+                    "rotate": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        0.6000000238418579,
+                        0.6000000238418579,
+                        1.0
+                    ],
+                    "translate": [
+                        624.0,
+                        -344.0,
+                        0.0
+                    ]
+                },
+                {
+                    "CompName": "class Camera2DComp",
+                    "farClip": 1000.0,
+                    "height": 720,
+                    "nearClip": 0.10000000149011612,
+                    "width": 1280
+                },
+                {
+                    "CompName": "class FollowCamera2DComp"
+                }
+            ],
+            "type": "Object"
+        },
+        {
+            "Comps": [
+                {
+                    "BlendType": "kNormal",
                     "CompName": "class SpriteRenderDataComp",
                     "color": [
                         1.0,
@@ -11,7 +48,7 @@
                         1.0,
                         1.0
                     ],
-                    "fileName": "./Resources/Textures/Blocks/block2.png",
+                    "fileName": "./Resources/Textures/backGround/backGround_back.png",
                     "offsetType": "kMiddle"
                 },
                 {
@@ -26,14 +63,14 @@
                         1.0
                     ],
                     "scale": [
-                        1.0,
-                        1.0,
-                        1.0
+                        1280.0,
+                        720.0,
+                        16.0
                     ],
                     "translate": [
-                        0.0,
-                        -0.0,
-                        0.0
+                        624.0,
+                        -344.0,
+                        100.0
                     ]
                 }
             ]
@@ -41,7 +78,7 @@
         {
             "Comps": [
                 {
-                    "BlendType": "kNone",
+                    "BlendType": "kNormal",
                     "CompName": "class SpriteRenderDataComp",
                     "color": [
                         1.0,
@@ -49,7 +86,7 @@
                         1.0,
                         1.0
                     ],
-                    "fileName": "./Resources/Textures/Blocks/block1.png",
+                    "fileName": "./Resources/Textures/gimmick/cloud_shadow2.png",
                     "offsetType": "kMiddle"
                 },
                 {
@@ -64,22 +101,138 @@
                         1.0
                     ],
                     "scale": [
+                        32.0,
+                        32.0,
+                        32.0
+                    ],
+                    "translate": [
+                        0.0,
+                        -0.0,
+                        1.0
+                    ]
+                },
+                {
+                    "CompName": "class CloudComp"
+                },
+                {
+                    "CompName": "class ObbComp",
+                    "center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "collisiionTags": [],
+                    "scale": [
                         1.0,
                         1.0,
                         1.0
+                    ]
+                },
+                {
+                    "CompName": "class ObbPushComp",
+                    "pushTags": [
+                        "class PlayerComp"
+                    ]
+                },
+                {
+                    "CompName": "class FlagComp"
+                },
+                {
+                    "CompName": "class Mass2DComp",
+                    "mass": [
+                        0,
+                        0
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": 32
+                }
+            ],
+            "type": "Object"
+        },
+        {
+            "Comps": [
+                {
+                    "BlendType": "kNormal",
+                    "CompName": "class SpriteRenderDataComp",
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "fileName": "./Resources/Textures/gimmick/cloud_shadow2.png",
+                    "offsetType": "kMiddle"
+                },
+                {
+                    "CompName": "class SpriteRenderComp"
+                },
+                {
+                    "CompName": "class TransformComp",
+                    "rotate": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        32.0,
+                        32.0,
+                        32.0
                     ],
                     "translate": [
                         64.0,
                         -0.0,
-                        0.0
+                        1.0
                     ]
+                },
+                {
+                    "CompName": "class CloudComp"
+                },
+                {
+                    "CompName": "class ObbComp",
+                    "center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "collisiionTags": [],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                {
+                    "CompName": "class ObbPushComp",
+                    "pushTags": [
+                        "class PlayerComp"
+                    ]
+                },
+                {
+                    "CompName": "class FlagComp"
+                },
+                {
+                    "CompName": "class Mass2DComp",
+                    "mass": [
+                        2,
+                        0
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": 32
                 }
-            ]
+            ],
+            "type": "Object"
         },
         {
             "Comps": [
                 {
-                    "BlendType": "kNone",
+                    "BlendType": "kNormal",
                     "CompName": "class SpriteRenderDataComp",
                     "color": [
                         1.0,
@@ -87,7 +240,7 @@
                         1.0,
                         1.0
                     ],
-                    "fileName": "./Resources/Textures/Blocks/block2.png",
+                    "fileName": "./Resources/Textures/gimmick/cloud_shadow2.png",
                     "offsetType": "kMiddle"
                 },
                 {
@@ -102,22 +255,61 @@
                         1.0
                     ],
                     "scale": [
-                        1.0,
-                        1.0,
-                        1.0
+                        32.0,
+                        32.0,
+                        32.0
                     ],
                     "translate": [
                         32.0,
                         -32.0,
-                        0.0
+                        1.0
                     ]
+                },
+                {
+                    "CompName": "class CloudComp"
+                },
+                {
+                    "CompName": "class ObbComp",
+                    "center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "collisiionTags": [],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                {
+                    "CompName": "class ObbPushComp",
+                    "pushTags": [
+                        "class PlayerComp"
+                    ]
+                },
+                {
+                    "CompName": "class FlagComp"
+                },
+                {
+                    "CompName": "class Mass2DComp",
+                    "mass": [
+                        1,
+                        1
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": 32
                 }
-            ]
+            ],
+            "type": "Object"
         },
         {
             "Comps": [
                 {
-                    "BlendType": "kNone",
+                    "BlendType": "kNormal",
                     "CompName": "class SpriteRenderDataComp",
                     "color": [
                         1.0,
@@ -125,7 +317,7 @@
                         1.0,
                         1.0
                     ],
-                    "fileName": "./Resources/Textures/Blocks/block1.png",
+                    "fileName": "./Resources/Textures/gimmick/cloud_shadow2.png",
                     "offsetType": "kMiddle"
                 },
                 {
@@ -140,22 +332,61 @@
                         1.0
                     ],
                     "scale": [
-                        1.0,
-                        1.0,
-                        1.0
+                        32.0,
+                        32.0,
+                        32.0
                     ],
                     "translate": [
                         0.0,
                         -64.0,
-                        0.0
+                        1.0
                     ]
+                },
+                {
+                    "CompName": "class CloudComp"
+                },
+                {
+                    "CompName": "class ObbComp",
+                    "center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "collisiionTags": [],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                {
+                    "CompName": "class ObbPushComp",
+                    "pushTags": [
+                        "class PlayerComp"
+                    ]
+                },
+                {
+                    "CompName": "class FlagComp"
+                },
+                {
+                    "CompName": "class Mass2DComp",
+                    "mass": [
+                        0,
+                        2
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": 32
                 }
-            ]
+            ],
+            "type": "Object"
         },
         {
             "Comps": [
                 {
-                    "BlendType": "kNone",
+                    "BlendType": "kNormal",
                     "CompName": "class SpriteRenderDataComp",
                     "color": [
                         1.0,
@@ -163,7 +394,7 @@
                         1.0,
                         1.0
                     ],
-                    "fileName": "./Resources/Textures/Blocks/block2.png",
+                    "fileName": "./Resources/Textures/gimmick/cloud_shadow2.png",
                     "offsetType": "kMiddle"
                 },
                 {
@@ -178,17 +409,436 @@
                         1.0
                     ],
                     "scale": [
-                        1.0,
-                        1.0,
-                        1.0
+                        32.0,
+                        32.0,
+                        32.0
                     ],
                     "translate": [
                         64.0,
                         -64.0,
+                        1.0
+                    ]
+                },
+                {
+                    "CompName": "class CloudComp"
+                },
+                {
+                    "CompName": "class ObbComp",
+                    "center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "collisiionTags": [],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                {
+                    "CompName": "class ObbPushComp",
+                    "pushTags": [
+                        "class PlayerComp"
+                    ]
+                },
+                {
+                    "CompName": "class FlagComp"
+                },
+                {
+                    "CompName": "class Mass2DComp",
+                    "mass": [
+                        2,
+                        2
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": 32
+                }
+            ],
+            "type": "Object"
+        },
+        {
+            "Comps": [
+                {
+                    "CompName": "class PlayerComp"
+                },
+                {
+                    "BlendType": "kNormal",
+                    "CompName": "class SpriteRenderDataComp",
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "fileName": "./Resources/Textures/player/player_stop.png",
+                    "offsetType": "kMiddle"
+                },
+                {
+                    "CompName": "class SpriteRenderComp"
+                },
+                {
+                    "CompName": "class TransformComp",
+                    "rotate": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        48.0,
+                        48.0,
+                        48.0
+                    ],
+                    "translate": [
+                        224.0,
+                        -64.0,
+                        1.0
+                    ]
+                },
+                {
+                    "CompName": "class FallComp",
+                    "gravity": -9.800000190734863
+                },
+                {
+                    "CompName": "class ObbComp",
+                    "center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "collisiionTags": [],
+                    "scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ]
+                },
+                {
+                    "CompName": "class ObbPushComp",
+                    "pushTags": []
+                },
+                {
+                    "CompName": "class Aabb2DComp",
+                    "scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ]
+                },
+                {
+                    "CompName": "class InputMoveComp",
+                    "speed": 1.0
+                },
+                {
+                    "CompName": "class FlagComp"
+                },
+                {
+                    "CompName": "class Direction2DComp"
+                },
+                {
+                    "CompName": "class CsvDataComp",
+                    "fileName": "Resources/Maps/test.csv"
+                },
+                {
+                    "CompName": "class EatCloudComp"
+                },
+                {
+                    "CompName": "class RemoveCloudComp"
+                },
+                {
+                    "CompName": "class CountComp"
+                },
+                {
+                    "CompName": "class Mass2DComp",
+                    "mass": [
+                        7,
+                        2
+                    ],
+                    "offset": [
+                        16.0,
+                        16.0
+                    ],
+                    "size": 32
+                },
+                {
+                    "CompName": "class SpriteAnimatorComp",
+                    "animationNumber": 6,
+                    "duration": 0.16660000383853912,
+                    "isLoop": true,
+                    "startPos": [
+                        0.0,
+                        0.0,
                         0.0
                     ]
                 }
             ]
+        },
+        {
+            "Comps": [
+                {
+                    "CompName": "class EyeComp"
+                },
+                {
+                    "CompName": "class TransformComp",
+                    "rotate": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        100.0,
+                        100.0,
+                        100.0
+                    ],
+                    "translate": [
+                        512.0,
+                        -96.0,
+                        1.0
+                    ]
+                },
+                {
+                    "CompName": "class EyeStateComp",
+                    "aimFixedTime": 1.0,
+                    "aimeTime": 1.5,
+                    "fireTime": 0.5
+                },
+                {
+                    "CollisionTags": [
+                        "class CloudComp"
+                    ],
+                    "CompName": "class LineCollisionComp"
+                },
+                {
+                    "CompName": "class LineComp",
+                    "end": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "start": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                {
+                    "CompName": "class LineRenderDataComp",
+                    "color": [
+                        1.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "isDepth": true
+                },
+                {
+                    "CompName": "class EaseingComp",
+                    "isLoop": false,
+                    "spdT": 0.5,
+                    "type": "InOutSine"
+                },
+                {
+                    "Children": [
+                        {
+                            "Comps": [
+                                {
+                                    "BlendType": "kNone",
+                                    "CompName": "class SpriteRenderDataComp",
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "fileName": "./Resources/Textures/enemy/enemy_eye_up.png",
+                                    "offsetType": "kMiddle"
+                                },
+                                {
+                                    "CompName": "class SpriteRenderComp"
+                                },
+                                {
+                                    "CompName": "class TransformComp",
+                                    "rotate": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        1.0
+                                    ],
+                                    "scale": [
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "translate": [
+                                        0.0,
+                                        0.0,
+                                        -0.10000000149011612
+                                    ]
+                                }
+                            ],
+                            "type": "Object"
+                        },
+                        {
+                            "Comps": [
+                                {
+                                    "BlendType": "kNone",
+                                    "CompName": "class SpriteRenderDataComp",
+                                    "color": [
+                                        1.0,
+                                        0.0,
+                                        0.0,
+                                        1.0
+                                    ],
+                                    "fileName": "./Resources/EngineResources/white2x2.png",
+                                    "offsetType": "kMiddle"
+                                },
+                                {
+                                    "CompName": "class SpriteRenderComp"
+                                },
+                                {
+                                    "CompName": "class TransformComp",
+                                    "rotate": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        1.0
+                                    ],
+                                    "scale": [
+                                        0.0,
+                                        10.0,
+                                        10.0
+                                    ],
+                                    "translate": [
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ]
+                                },
+                                {
+                                    "CompName": "class LineConvertTransformComp"
+                                },
+                                {
+                                    "CompName": "class LineComp",
+                                    "end": [
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "start": [
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ]
+                                }
+                            ],
+                            "type": "Object"
+                        }
+                    ],
+                    "CompName": "class ChildrenObjectComp"
+                },
+                {
+                    "CompName": "class LineRenderComp"
+                },
+                {
+                    "CompName": "class SpriteRenderComp"
+                },
+                {
+                    "BlendType": "kNone",
+                    "CompName": "class SpriteRenderDataComp",
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "fileName": "./Resources/Textures/enemy/enemy_eye_down.png",
+                    "offsetType": "kMiddle"
+                }
+            ],
+            "type": "Object"
+        },
+        {
+            "Comps": [
+                {
+                    "BlendType": "kNormal",
+                    "CompName": "class SpriteRenderDataComp",
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "fileName": "./Resources/Textures/gimmick/cloud_shadow2.png",
+                    "offsetType": "kMiddle"
+                },
+                {
+                    "CompName": "class SpriteRenderComp"
+                },
+                {
+                    "CompName": "class TransformComp",
+                    "rotate": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        32.0,
+                        32.0,
+                        32.0
+                    ],
+                    "translate": [
+                        224.0,
+                        -128.0,
+                        1.0
+                    ]
+                },
+                {
+                    "CompName": "class CloudComp"
+                },
+                {
+                    "CompName": "class ObbComp",
+                    "center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "collisiionTags": [],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                {
+                    "CompName": "class ObbPushComp",
+                    "pushTags": [
+                        "class PlayerComp"
+                    ]
+                },
+                {
+                    "CompName": "class FlagComp"
+                },
+                {
+                    "CompName": "class Mass2DComp",
+                    "mass": [
+                        7,
+                        4
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": 32
+                }
+            ],
+            "type": "Object"
         }
-    ]
+    ],
+    "scene": "test"
 }

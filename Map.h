@@ -21,16 +21,12 @@ const int64_t kMaxFillListSIze = kMaxWidth * kMaxHeight * kMaxListSize;
 enum BlockType {
 	
 	kNone, //空白
-	kBlock1,
-	kBlock2,
-	kBlock3,
-	kBlock4,
-	kBlock5,
-	kBlock6,
-	kBlock7,
-	kBlock8,
-	kBlock9,
-	kBlock10,
+	kCloud, //雲
+	kPlayerPoint, //プレイヤースタート地点
+	kKey, //鍵
+	kGoal, //ゴール
+	kCollection, //収集アイテム
+	kEye, //目
 	kMaxBlock,//ブロックの最大数
 
 };
@@ -99,8 +95,9 @@ private:
 	void LoadAllMaps();
 
 	//テキスト説明
-	std::array<std::string, kMaxBlock> blockNames_ = { "None", "Block1", "Block2", "Block3", "Block4", "Block5", "Block6", "Block7", 
-		"Block8", "Block9", "Block10" };
+	std::array<std::string, kMaxBlock> blockNames_ = { "None", "Cloud", "PlayerPoint", "Key", "Goal", "Collection", "Eye" };
+
+	std::array<int32_t, kMaxBlock> blockCounts_{};
 
 	//ImGuiをタッチしたか
 	bool isTouchGui_ = false;
