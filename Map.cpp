@@ -952,6 +952,17 @@ void Map::SaveJson() {
 
 	}
 
+	//インプット追加
+	{
+
+		root["objects"].push_back(nlohmann::json::object());
+		root["objects"].back()["Comps"] = nlohmann::json::array();
+
+		root["objects"].back()["Comps"].push_back(nlohmann::json::object());
+		root["objects"].back()["Comps"].back()["CompName"] = "class ResultInputComp";
+
+	}
+
 	root["objects"].push_back(nlohmann::json::object());
 	root["objects"].back()["Comps"] = nlohmann::json::array();
 
